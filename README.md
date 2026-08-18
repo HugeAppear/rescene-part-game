@@ -1,17 +1,26 @@
-# 리센느 파트 맞추기 게임 🎧 (v2 — 실시간 싱크 모드)
+# 리센느 파트 맞추기 게임 🎧 (v3 — 개인전/경쟁전 + 랭킹 보드)
 
 노래가 흐르는 동안 가사가 한 줄씩 하이라이트되고, 그 파트를 부르는 멤버를
 실시간으로 맞추는 게임입니다. 맞힌 가사는 멤버 색깔로 물들고,
 틀리거나 놓쳐도 곡은 끝까지 진행되며 점수가 계속 쌓입니다.
 다 같이 부르는 구간은 **떼창** 버튼으로 맞힙니다.
 
+**v3 새 기능**
+- **개인전**: 기록을 어디에도 남기지 않고 가볍게 플레이
+- **경쟁전**: 닉네임을 입력하고 플레이하면 점수가 **온라인 랭킹 보드**에 등록
+  (모든 플레이어가 같은 보드를 봅니다 — 아래 Firebase 설정 필요)
+- **🏆 랭킹 보드**: 곡별 상위 20명 (점수 → 정답률 → 콤보 → 먼저 등록 순)
+- 7곡 전곡에 1절 파트 데이터 포함 (가사·멤버는 리서치 기반, 타이밍은
+  음원 자동 분석 초안 — 파트 에디터로 미세 조정 추천)
+
 ## 폴더 구조
 
 ```
 rescene-part-game/
-├── index.html          ← 게임 + 파트 에디터 (전부 이 파일 하나)
+├── index.html          ← 게임 + 파트 에디터 + 랭킹 보드 (전부 이 파일 하나)
 ├── songs/
-│   └── prettygirl.mp3  ← 음원 (구매한 320kbps 파일, 이름 변경됨)
+│   ├── uhuh.mp3  loveattack.mp3  pinball.mp3  newworld.mp3
+│   ├── dejavu.mp3  runaway.mp3  prettygirl.mp3
 └── img/
     ├── woni.jpg  liv.jpg  minami.jpg  may.jpg  zena.jpg
 ```
@@ -20,8 +29,13 @@ rescene-part-game/
 
 1. 폴더에서 터미널을 열고 `python3 -m http.server` 실행
 2. 브라우저에서 `http://localhost:8000` 접속
-3. **게임 시작** → 데모 파트 10개로 게임이 어떻게 돌아가는지 확인
-   (데모 파트의 가사·타이밍·정답은 전부 가짜입니다!)
+3. 곡을 고르고 **개인전** → 바로 플레이!
+   (**경쟁전**은 아래 Firebase 설정을 마쳐야 열립니다)
+
+> ⚠️ 6곡(UhUh·LOVE ATTACK·Pinball·New World·Deja Vu·Runaway)의 타이밍은
+> 음원을 자동 분석해 만든 **초안**입니다. 대체로 맞지만 파트 경계가 1~2초
+> 어긋난 곳이 있을 수 있어요. 파트 에디터에서 실제로 들어보며 다듬어주세요.
+> (Pretty Girl은 직접 만드신 데이터를 그대로 유지했습니다)
 
 > index.html을 더블클릭(file://)으로 열면 브라우저가 mp3 로딩을 막을 수 있어요.
 > 그 경우에도 **파트 에디터 → 파일 선택**으로 mp3를 불러오면 동작합니다.
@@ -59,42 +73,112 @@ rescene-part-game/
 - `GRACE` (기본 1.0초): 파트가 끝난 뒤에도 답을 받아주는 여유 시간
 - `MEMBERS`의 `color`: 멤버 색깔 (가사 색칠·버튼에 모두 반영)
 
+## 경쟁전 랭킹 보드 설정 (Firebase, 5~10분)
+
+경쟁전 기록은 **모든 플레이어가 공유하는 온라인 보드**에 저장됩니다.
+GitHub Pages는 정적 호스팅이라 서버가 없으므로, 무료 Firebase Firestore를
+백엔드로 씁니다. 이 게임 규모라면 무료 요금제(Spark)로 충분합니다.
+
+- 개인전: 아무 기록도 저장하지 않음 (설정 없이도 항상 가능)
+- 경쟁전: 점수가 Firestore에 저장되고 🏆 랭킹 보드에 표시
+- 설정 전에는 경쟁전 버튼이 잠겨 있고 안내 문구만 나옵니다
+
+### 1) Firebase 프로젝트 만들기
+
+1. https://console.firebase.google.com → **프로젝트 추가** (이름 예: `rescene-game`)
+2. 왼쪽 메뉴 **빌드 → Firestore Database → 데이터베이스 만들기**
+   - 위치: `asia-northeast3 (서울)` 추천, **프로덕션 모드**로 시작
+
+### 2) 보안 규칙 붙여넣기
+
+Firestore → **규칙** 탭에 아래를 통째로 붙여넣고 **게시**:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 랭킹 보드: 읽기는 모두 허용, 쓰기는 "형식이 올바른 새 기록 추가"만 허용
+    match /scores/{songId}/entries/{entry} {
+      allow read: if true;
+      allow create: if
+        request.resource.data.keys().hasOnly(['name','score','total','pct','combo','ts']) &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() >= 1 &&
+        request.resource.data.name.size() <= 12 &&
+        request.resource.data.score is int &&
+        request.resource.data.score >= 0 &&
+        request.resource.data.total is int &&
+        request.resource.data.total > 0 &&
+        request.resource.data.total <= 300 &&
+        request.resource.data.score <= request.resource.data.total &&
+        request.resource.data.pct is int &&
+        request.resource.data.pct >= 0 &&
+        request.resource.data.pct <= 100 &&
+        request.resource.data.combo is int &&
+        request.resource.data.combo >= 0 &&
+        request.resource.data.combo <= 300 &&
+        request.resource.data.ts == request.time;
+      allow update, delete: if false; // 수정·삭제는 콘솔에서만
+    }
+  }
+}
+```
+
+### 3) 웹 앱 등록 + 설정 복사
+
+1. ⚙️ **프로젝트 설정** → **내 앱** → 웹(`</>`) 아이콘 → 앱 등록
+2. 화면에 나오는 `const firebaseConfig = { ... }` 객체를 복사
+
+### 4) index.html에 붙여넣기
+
+✅ **이미 완료** — 이 저장소의 `index.html`에는 `rescene-part-game` 프로젝트의
+config가 들어가 있습니다 (`const FIREBASE_CONFIG = { ... }`).
+아직 안 했다면 **1) Firestore 데이터베이스 만들기**와 **2) 보안 규칙 게시**만
+마치면 경쟁전·랭킹 보드가 바로 작동합니다. SDK는 npm 없이 gstatic CDN에서
+로드되므로 빌드 과정이 필요 없습니다.
+
+> `apiKey`는 비밀키가 아니라 프로젝트 식별자라서 공개 저장소에 올라가도
+> 됩니다. 실제 보호는 위 Firestore 규칙이 담당합니다.
+> 로그인 없이 닉네임만 받는 구조라 마음먹으면 점수 조작은 가능합니다 —
+> 팬 게임 규모에선 보통 충분하고, 필요해지면 익명 로그인 + App Check를
+> 추가하면 됩니다. (무료 한도: 하루 읽기 5만 / 쓰기 2만 회)
+
+### 데이터 구조 (참고)
+
+```
+scores / {songId} / entries / 자동ID: { name, score, total, pct, combo, ts }
+```
+
+보드는 곡별 상위 50개를 받아 점수 → 정답률 → 콤보 → 먼저 등록한 순으로
+정렬해 20명을 보여줍니다. 기록 정리는 Firebase 콘솔 → Firestore에서 직접.
+
 ## GitHub Pages 배포
 
-1. 새 저장소를 만들고 `index.html`, `songs/`, `img/`를 업로드
-2. Settings → Pages → Branch `main` 선택
-3. `https://아이디.github.io/저장소이름/` 에서 플레이
+저장소: https://github.com/HugeAppear/rescene-part-game
+
+1. 이 폴더 내용을 커밋하고 푸시 (`index.html`, `README.md`, `songs/`, `img/`)
+2. 저장소 Settings → Pages → Branch `main` 선택
+3. https://hugeappear.github.io/rescene-part-game/ 에서 플레이
 
 ### ⚠️ 배포 전 꼭 읽어주세요 (음원 저작권)
 
-지금 `songs/prettygirl.mp3`는 **곡 전체(3:30) 파일**입니다. 이대로 공개
-저장소에 올리면 누구나 원본 mp3를 통째로 내려받을 수 있어서, 구매한
-음원이라도 사실상 재배포가 됩니다. 공개 배포 전에 게임에서 실제로 쓰는
-구간(예: 1절, 첫 파트 시작 ~ 마지막 파트 끝 + 2초)만 잘라 올리는 것을 강력히
-권장합니다:
+`songs/` 안의 mp3는 **곡 전체 파일**입니다. 이대로 공개 저장소에 올리면
+누구나 원본 mp3를 통째로 내려받을 수 있어서, 구매한 음원이라도 사실상
+재배포가 됩니다. 파트 데이터가 1절까지만 있으므로, 게임에서 실제로 쓰는
+구간(마지막 파트 끝 + 3초)까지만 자른 파일을 올리는 것을 강력히 권장합니다.
+**앞부분(0초)부터 자르는 게 아니라 뒷부분만 잘라내는 것이라, 파트 타이밍은
+수정 없이 그대로 유효합니다**:
 
 ```bash
-# 예: 10초부터 75초까지만 잘라내기
-ffmpeg -i songs/prettygirl.mp3 -ss 10 -to 75 -c copy songs/prettygirl_cut.mp3
+# 예: 앞 90초만 남기기 (곡별 '마지막 파트 끝'은 index.html의 parts 참고)
+ffmpeg -i songs/uhuh.mp3 -t 90 -c copy songs/uhuh_cut.mp3
+mv songs/uhuh_cut.mp3 songs/uhuh.mp3   # 같은 이름으로 교체하면 코드 수정 불필요
 ```
 
-자른 파일로 바꿀 때는 `SONGS`의 `audio` 경로를 바꾸고, **파트 타임스탬프에서
-잘라낸 시작 시간(위 예시면 10초)을 빼주어야** 합니다. 타이밍을 다시 찍는 것보다
-찾아바꾸기가 편하면, 에디터에서 자른 파일을 불러와 다시 찍는 것도 방법입니다.
-
-## 최고 점수를 기기에 저장하고 싶다면 (선택)
-
-지금은 새로고침하면 최고 점수가 초기화됩니다. 배포 후:
-
-```js
-// const bests = {};  ← 이 줄을 아래로 교체
-const bests = JSON.parse(localStorage.getItem("rescene-bests") || "{}");
-
-// finishGame() 안의 이 줄 뒤에:
-if ((bests[G.song.id] || 0) < G.score) bests[G.song.id] = G.score;
-// 아래 한 줄 추가:
-localStorage.setItem("rescene-bests", JSON.stringify(bests));
-```
+✂️ **`songs_trimmed/` 폴더에 잘라둔 파일이 준비되어 있습니다** — 6곡을 각각
+마지막 파트 끝 +3초에서 자르고 2초 페이드아웃을 넣은 버전입니다 (Pretty Girl은
+파트가 곡 전체라 제외). 공개 배포 시 `songs_trimmed/`의 파일들을 `songs/`로
+덮어쓰기만 하면 됩니다 (파일명이 같아서 코드 수정 불필요, 타이밍 그대로 유효).
 
 ## 주의사항
 

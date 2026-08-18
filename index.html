@@ -163,6 +163,26 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
 .ed-msg{font-size:13px;color:var(--danger);margin-top:8px;min-height:1em}
 .ed-hint{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin-top:8px}
 
+/* ═══ 개인전/경쟁전 · 랭킹 보드 ═══ */
+.mode-btn{display:flex;flex-direction:column;align-items:center;gap:2px}
+.mode-btn .mode-sub{font-size:11px;font-weight:500;opacity:.8}
+.board-link{margin-top:10px}
+.mode-tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:6px;vertical-align:1px;background:rgba(138,111,209,.14);color:#7a5fd0}
+.mode-tag.rank{background:rgba(199,106,158,.16);color:#c76a9e}
+.board-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.board-tab{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px;font-weight:700;color:var(--ink-soft)}
+.board-tab.sel{background:linear-gradient(120deg,#7a5fd0,#c76a9e);color:#fff;border:1px solid transparent}
+.board-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.board-table th{text-align:left;color:var(--ink-soft);font-weight:500;padding:10px 6px 6px;font-size:11.5px}
+.board-table td{padding:9px 6px;border-top:1px solid var(--line);word-break:break-all}
+.board-table td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.board-table .medal{font-size:15px}
+.board-me td{background:rgba(138,111,209,.07)}
+.board-msg{font-size:13px;color:var(--ink-soft);text-align:center;padding:12px 0 4px;min-height:1em}
+.r-save{font-size:12.5px;margin:-6px 0 12px;color:var(--ink-soft);min-height:1em}
+.result-sheet .btn-row .btn{font-size:13.5px;padding:12px 4px}
+#nick-input{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:16px;text-align:center;font-family:var(--sans)}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -180,12 +200,17 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
       🎤 노래가 흐르면 가사가 한 줄씩 하이라이트됩니다.<br />
       👆 그 파트를 부르는 멤버 버튼을 누르세요. 다 같이 부르면 <b>떼창</b>!<br />
       🎨 맞힌 가사는 멤버 색깔로 물듭니다.<br />
-      💪 틀려도 노래는 끝까지! 점수를 최대한 쌓아보세요.
+      💪 틀려도 노래는 끝까지! 점수를 최대한 쌓아보세요.<br />
+      🏆 <b>경쟁전</b>은 랭킹 보드에 기록이 남고, <b>개인전</b>은 기록 없이 즐길 수 있어요.
     </div>
 
     <div class="song-list" id="song-list"></div>
     <div class="legend" id="legend"></div>
-    <button class="btn btn-primary" id="btn-start">게임 시작</button>
+    <div class="btn-row">
+      <button class="btn btn-ghost mode-btn" id="btn-solo">개인전<span class="mode-sub">기록 없이 가볍게</span></button>
+      <button class="btn btn-primary mode-btn" id="btn-rank">경쟁전<span class="mode-sub">랭킹 보드에 등록</span></button>
+    </div>
+    <button class="btn btn-ghost board-link" id="btn-board">🏆 랭킹 보드</button>
     <p class="start-msg" id="start-msg"></p>
     <button class="editor-link" id="btn-editor">🛠 파트 에디터 — 가사·타이밍 직접 만들기</button>
   </div>
@@ -197,7 +222,7 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
     <button class="icon-btn" id="btn-quit" aria-label="나가기">✕</button>
     <div class="head-mid">
       <div class="g-song" id="g-song"></div>
-      <div class="g-score"><b id="g-score">0</b> / <span id="g-total">0</span> <span class="g-combo" id="g-combo"></span></div>
+      <div class="g-score"><span class="mode-tag" id="g-mode">개인전</span><b id="g-score">0</b> / <span id="g-total">0</span> <span class="g-combo" id="g-combo"></span></div>
     </div>
     <button class="icon-btn" id="btn-pause" aria-label="일시정지">⏸</button>
   </header>
@@ -214,9 +239,11 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
     <div class="r-rank" id="r-rank">A</div>
     <div class="r-score" id="r-score"></div>
     <div class="r-sub" id="r-sub"></div>
+    <div class="r-save" id="r-save"></div>
     <div class="btn-row">
       <button class="btn btn-primary" id="btn-again">다시 하기</button>
       <button class="btn btn-ghost" id="btn-home">곡 선택</button>
+      <button class="btn btn-ghost" id="btn-result-board">🏆 랭킹</button>
       <button class="btn btn-ghost" id="btn-share">공유</button>
     </div>
   </div>
@@ -230,6 +257,36 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
     </div>
   </div>
 </section>
+
+<!-- ═══════════ 랭킹 보드 (경쟁전 기록) ═══════════ -->
+<section id="screen-board" class="screen">
+  <div class="wrap">
+    <div class="ed-head">
+      <button class="icon-btn" id="btn-board-back">←</button>
+      <h2 style="font-family:var(--serif);font-size:20px;flex:1">🏆 랭킹 보드</h2>
+      <button class="icon-btn" id="btn-board-refresh" title="새로고침">↻</button>
+    </div>
+    <div class="board-tabs" id="board-tabs"></div>
+    <div class="card" style="padding:4px 14px 12px">
+      <table class="board-table">
+        <thead><tr><th>#</th><th>닉네임</th><th style="text-align:right">점수</th><th style="text-align:right">정답률</th><th style="text-align:right">콤보</th></tr></thead>
+        <tbody id="board-body"></tbody>
+      </table>
+      <p class="board-msg" id="board-msg"></p>
+    </div>
+  </div>
+</section>
+
+<!-- 경쟁전 닉네임 입력 -->
+<div class="overlay" id="nick-overlay" hidden>
+  <div class="pause-card">
+    <h3>경쟁전 닉네임</h3>
+    <input id="nick-input" maxlength="12" placeholder="닉네임 (최대 12자)" autocomplete="off" />
+    <p class="start-msg" id="nick-msg" style="margin-top:8px"></p>
+    <button class="btn btn-primary" id="nick-go">경쟁전 시작</button>
+    <button class="btn btn-ghost" id="nick-cancel">취소</button>
+  </div>
+</div>
 
 <!-- ═══════════ 파트 에디터 ═══════════ -->
 <section id="screen-editor" class="screen">
@@ -322,17 +379,130 @@ const ALL_KEY = "all"; // 떼창(전원 파트)
    parts 는 [파트 에디터]로 만들어 붙여넣는 것을 추천합니다.
    각 파트: { start: 시작초, end: 끝초, text: "가사 한 줄", answer: "woni|liv|minami|may|zena|all" }
 
-   ※ 아래 Pretty Girl 의 parts 는 게임 동작을 미리 볼 수 있게 넣어둔
-      "데모 데이터"(타이밍·가사·정답 모두 가짜)입니다.
-      에디터에서 실제 가사와 타이밍으로 만들어 교체하세요! */
+   ※ 타이밍은 자동 생성 초안이 포함되어 있습니다 — 에디터에서 실제로 들어보며
+      미세 조정하는 것을 추천합니다. */
 const SONGS = [
+  {
+    id: "uhuh",
+    title: "UhUh",
+    audio: "songs/uhuh.mp3",
+    parts: [
+/* uhuh — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
+      { start: 0.5, end: 9.8, text: "I see 넌 부정하지만 네가 Try attention", answer: "zena" },
+      { start: 9.8, end: 17.8, text: "I see through ya 달콤함 속에 끌려 넌", answer: "zena" },
+      { start: 17.8, end: 25.5, text: "아무도 보이지 않는 곳에서 Feel your tension Let you know ya It's easy to find me baby", answer: "minami" },
+      { start: 25.5, end: 31.1, text: "Cause I 저 깊은 곳에서 변하려 해", answer: "liv" },
+      { start: 31.1, end: 36, text: "몰랐겠지 넌 Don't even know that 꿈에서도 넌 Don't even know that", answer: "may" },
+      { start: 36, end: 41, text: "이젠 시간이 된 거야 향기로 채울래", answer: "minami" },
+      { start: 41, end: 44.8, text: "Uh so wait a minute take it slow ooh baby", answer: "zena" },
+      { start: 44.8, end: 48.2, text: "눈을 감아 느껴봐 Feel the chemistry", answer: "liv" },
+      { start: 48.2, end: 52.2, text: "You gonna shout it out (Uh uh) You gonna shout it out (Uh uh)", answer: "all" },
+      { start: 52.2, end: 59.2, text: "그 향기를 따라 시작된 소나타 빠져들어", answer: "woni" },
+      { start: 59.2, end: 61.2, text: "Do you wanna follow me?", answer: "may" },
+      { start: 61.2, end: 64.2, text: "Uh uh uh-uh Uh uh uh-uh", answer: "all" },
+      { start: 64.2, end: 66.2, text: "You got to see the light", answer: "zena" },
+      { start: 66.2, end: 68.2, text: "Uh uh uh-uh Uh uh uh-uh", answer: "all" },
+      { start: 68.2, end: 70.2, text: "Too late you can't deny", answer: "minami" },
+      { start: 70.2, end: 74.2, text: "이미 흘러간 저 빛 사이 꼭꼭 숨겨진 내 향기", answer: "liv" },
+      { start: 74.2, end: 78.2, text: "Now 닫힌 문을 열어 Uh You see 타오르는 내 flower", answer: "zena" },
+    ],
+  },
+  {
+    id: "loveattack",
+    title: "LOVE ATTACK",
+    audio: "songs/loveattack.mp3",
+    parts: [
+/* loveattack — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
+      { start: 1, end: 4, text: "Feeling love attack!", answer: "woni" },
+      { start: 4, end: 7.2, text: "I am all you need I am all you need", answer: "zena" },
+      { start: 7.2, end: 9.2, text: "So come and get it now", answer: "may" },
+      { start: 9.2, end: 13, text: "I am all you need I am all you need Yeah get it", answer: "woni" },
+      { start: 13, end: 17.3, text: "걸음마다 눈부신 나 Let's get it started", answer: "minami" },
+      { start: 17.3, end: 21.4, text: "모든 순간 시선을 난 피하지 않지", answer: "liv" },
+      { start: 21.4, end: 23.5, text: "What you waiting for", answer: "woni" },
+      { start: 23.5, end: 25.9, text: "I'm just waiting for", answer: "may" },
+      { start: 25.9, end: 30, text: "나를 스친 깊은 끌림 직감을 Chasing", answer: "zena" },
+      { start: 30, end: 33.3, text: "Oh so strong (너를 느껴 난) Yeah so strong", answer: "minami" },
+      { start: 33.3, end: 38.3, text: "다가가 이미 난 (On and on) 너를 파헤쳐 1 2 3 4", answer: "may" },
+      { start: 38.3, end: 46, text: "Like me Like me 아주 눈이 부신 너를 숨김없이 보여줘", answer: "zena" },
+      { start: 46, end: 53.5, text: "한 번도 빛난 적 없었던 미지의 향으로 온 세상 물들여", answer: "woni" },
+      { start: 53.5, end: 62.7, text: "새로워진 장면에 두 눈이 황홀해 너의 손을 잡을 땐 너와 어우러질 땐", answer: "minami" },
+      { start: 62.7, end: 71.4, text: "빛을 이끌어 With me 마치 Chemically 우린 완벽하게 어울려", answer: "liv" },
+    ],
+  },
+  {
+    id: "pinball",
+    title: "Pinball",
+    audio: "songs/pinball.mp3",
+    parts: [
+/* pinball — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
+      { start: 5.2, end: 10.4, text: "너만 보면 맘이 떨려 들키기 싫어 훅 멀어져도", answer: "zena" },
+      { start: 10.4, end: 17.1, text: "Oh my oh my 심장이 떨려 어질어질 시작된 Pinball", answer: "zena" },
+      { start: 17.1, end: 19.7, text: "들켜서는 안 되는 Game", answer: "minami" },
+      { start: 19.7, end: 24.5, text: "끝내고 싶지 않아 (Play) 순식간에 High score", answer: "minami" },
+      { start: 24.5, end: 28.2, text: "나 들키기는 싫지만 Always down to play", answer: "minami" },
+      { start: 28.2, end: 33.9, text: "Ooh 네 앞에선 고장 나는 Heart 어색한 걸", answer: "may" },
+      { start: 33.9, end: 39, text: "애써 모르는 척 널 다시 넘겨 또 난 Holdin' back 나 나", answer: "may" },
+      { start: 39, end: 49.7, text: "I'm playing Pinball Pinball Pinball Love is like an arcade arcade 들뜬 내 맘이 너에게 닿기 전 Now", answer: "all" },
+      { start: 49.7, end: 62.4, text: "Got me going playin' Pinball Pinball Pinball 혼자만의 Love game 정신없게 난 계속해 밀어 종일 Playin' Pinball", answer: "all" },
+    ],
+  },
+  {
+    id: "newworld",
+    title: "New World",
+    audio: "songs/newworld.mp3",
+    parts: [
+/* newworld — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
+      { start: 2, end: 5.5, text: "Ooh ooh hoo", answer: "liv" },
+      { start: 5.5, end: 9.4, text: "Come and follow me (Mm mmh)", answer: "may" },
+      { start: 9.4, end: 13.9, text: "잔잔해진 파도 같아 아무 일도 없는 Feed", answer: "zena" },
+      { start: 13.9, end: 19, text: "(Ah oh) 매일 매일이 똑같은 Happen 벗어날래 Out of here", answer: "woni" },
+      { start: 19, end: 23.8, text: "지루해 지루해 Same life 색다른 설레임 Need yeah", answer: "woni" },
+      { start: 23.8, end: 31.2, text: "사진 속 너머 New world Oh-oh 궁금해지는 걸", answer: "woni" },
+      { start: 31.2, end: 36, text: "(Ooh ooh ooh ah ah uh ah) Where u at 퍼져가 내 안의 신호", answer: "may" },
+      { start: 36, end: 38.4, text: "자꾸만 불러 날 떠나 볼래 멀리", answer: "may" },
+      { start: 38.4, end: 43.3, text: "Let's go 지금이야 Switch my world 바꿀 Time", answer: "minami" },
+      { start: 43.3, end: 48, text: "고민 따윈 Delete fast 나를 기다리는 곳에 Log-in해", answer: "zena" },
+      { start: 48, end: 52.8, text: "잠든 맘을 깨워 심장에 Pop ringing now", answer: "liv" },
+      { start: 52.8, end: 57.2, text: "두려울 게 없는 Tap 낯선 향을 찾아서 난 Log-in해", answer: "liv" },
+    ],
+  },
+  {
+    id: "dejavu",
+    title: "Deja Vu",
+    audio: "songs/dejavu.mp3",
+    parts: [
+/* dejavu — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
+      { start: 9.7, end: 17.4, text: "햇살 젖은 바람 잠이 든 I 물든 창문 틈새 스며든 Light", answer: "minami" },
+      { start: 17.4, end: 23.7, text: "나의 코끝을 스친 Scent (그 향기에) 피어난 작은 보조개 (Oh It's so bright)", answer: "zena" },
+      { start: 23.7, end: 31.3, text: "책상 위에 그린 낙서 너와 나눈 그 비밀도", answer: "liv" },
+      { start: 31.3, end: 36.1, text: "바람결에 실려 다시 되돌아간 기분 After all", answer: "woni" },
+      { start: 36.1, end: 46.6, text: "처음 스친 그때 이 향길 기억해 줘 닿은 그 순간 펼쳐질 Deja vu", answer: "minami" },
+      { start: 46.6, end: 56.2, text: "같은 꿈을 꾸듯 눈을 감아보면 익숙한 Deja vu oh oh oh ha", answer: "may" },
+      { start: 56.2, end: 63.5, text: "I I I I I Yeah it's like a deja vu You and I 다시 닿을 수 없다 해도", answer: "zena" },
+      { start: 63.5, end: 70, text: "같은 꿈을 꾸듯 눈을 감아보면 익숙한 Deja vu oh oh oh ha", answer: "liv" },
+    ],
+  },
+  {
+    id: "runaway",
+    title: "Runaway",
+    audio: "songs/runaway.mp3",
+    parts: [
+/* runaway — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
+      { start: 12.2, end: 21.6, text: "회색빛에 갇혀버린 Neverland We know how it ends 또 의미 없이 돌고 도는 Everyday", answer: "minami" },
+      { start: 21.6, end: 27.6, text: "더는 갈 수 없게 여기 맴돌게 해 내가 사라진 꿈속에", answer: "zena" },
+      { start: 27.6, end: 33.5, text: "끝없는 쳇바퀴 울리는 메아리 벽을 넘어 Let's break this fate", answer: "woni" },
+      { start: 33.5, end: 44, text: "날 뒤흔드는 Heart now I run away 돌아서 난 이미 어서 Hold my hand", answer: "may" },
+      { start: 44, end: 50.8, text: "한걸음 Move 멀리 저 희미한 View 푸른 빛을 따라 날", answer: "liv" },
+      { start: 50.8, end: 56.5, text: "끌어당겨 넌 Now I run away I run away", answer: "minami" },
+    ],
+  },
   {
     id: "prettygirl",
     title: "Pretty Girl",
     audio: "songs/prettygirl.mp3",
+    /* Pretty Girl — 파트 에디터로 생성 (직접 만드신 데이터 그대로 유지) */
     parts: [
-/* Pretty Girl — 파트 에디터로 생성 */
-parts: [
       { start: 0, end: 15, text: "Ye ye Ye ye (Yeah) (Yeah) (Yeah) Ye ye one two three yeah!", answer: "all" },
       { start: 15, end: 18, text: "If you wanna pretty Every wanna pretty", answer: "all" },
       { start: 18, end: 20, text: "안 된다는 맘은", answer: "woni" },
@@ -367,15 +537,28 @@ parts: [
       { start: 183, end: 186, text: "If you wanna pretty Every wanna pretty", answer: "all" },
       { start: 186, end: 192, text: "어디서나 당당하게 걷기", answer: "woni" },
       { start: 192, end: 210, text: "Ye Ye (Yeah) (Yeah) (Yeah) Ye Ye (Yeah) (Yeah) (Yeah) Ye Ye", answer: "all" },
-],
     ],
   },
-  /* 새 곡 추가 예시:
-  { id: "uhuh", title: "UhUh", audio: "songs/uhuh.mp3", parts: [] },
-  */
 ];
 
 const GRACE = 1.0; // 파트가 끝난 뒤에도 답할 수 있는 여유 시간(초)
+
+/* ═══ 경쟁전 랭킹 보드 (Firebase) 설정 ═══
+   경쟁전 기록만 Firestore(scores/{songId}/entries)에 저장됩니다.
+   개인전은 아무 기록도 남기지 않습니다.
+   SDK는 npm 없이 gstatic CDN에서 필요할 때만 로드됩니다.
+   README.md의 "경쟁전 랭킹 보드 설정"에서 Firestore 생성 + 보안 규칙까지
+   마쳐야 실제로 기록이 저장됩니다. */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyB3cVfeGsqLuG5KZPR_7fXHiBOspRQWiFo",
+  authDomain: "rescene-part-game.firebaseapp.com",
+  projectId: "rescene-part-game",
+  storageBucket: "rescene-part-game.firebasestorage.app",
+  messagingSenderId: "716493588006",
+  appId: "1:716493588006:web:895004b2108086c52448e7",
+  measurementId: "G-VV6FYEHHHB",
+};
+const FIREBASE_SDK_VER = "12.17.1";
 
 /* ═══════════════════════════════════════════════════════════
    ② 공통
@@ -392,7 +575,9 @@ function show(id) {
    ③ 시작 화면
    ═══════════════════════════════════════════════════════════ */
 let selectedSong = 0;
-const bests = {}; // { songId: 최고점수 } — 저장 방법은 README 참고
+let gameMode = "solo"; // "solo" = 개인전(기록 없음) | "rank" = 경쟁전(랭킹 보드 등록)
+const bests = JSON.parse(localStorage.getItem("rescene-bests") || "{}"); // { songId: 경쟁전 내 최고점수 }
+function saveBests() { try { localStorage.setItem("rescene-bests", JSON.stringify(bests)); } catch (e) {} }
 
 function buildStart() {
   $("legend").innerHTML =
@@ -406,23 +591,131 @@ function buildStart() {
         <span class="s-title">${s.title}</span>
         <div class="s-meta">${s.parts.length ? s.parts.length + "개 파트" : "파트 데이터 없음 — 에디터에서 만들기"}</div>
       </span>
-      <span class="s-best">최고<b>${bests[s.id] || 0}</b></span>
+      <span class="s-best">내 최고<b>${bests[s.id] || 0}</b></span>
     </button>`).join("");
   document.querySelectorAll(".song-item").forEach((el) =>
     el.addEventListener("click", () => { selectedSong = +el.dataset.i; buildStart(); })
   );
 }
 
-$("btn-start").addEventListener("click", () => {
+function tryStart(mode) {
   const song = SONGS[selectedSong];
   if (!song.parts.length) {
     $("start-msg").textContent = "이 곡은 아직 파트 데이터가 없어요. 파트 에디터에서 먼저 만들어주세요!";
     return;
   }
   $("start-msg").textContent = "";
+  if (mode === "rank") {
+    if (!FIREBASE_CONFIG) {
+      $("start-msg").textContent = "경쟁전은 Firebase 설정 후에 열려요 (README의 '경쟁전 랭킹 보드 설정' 참고). 지금은 개인전으로 즐겨주세요!";
+      return;
+    }
+    openNickOverlay();
+    return;
+  }
+  gameMode = "solo";
   startGame(song, null);
-});
+}
+$("btn-solo").addEventListener("click", () => tryStart("solo"));
+$("btn-rank").addEventListener("click", () => tryStart("rank"));
+$("btn-board").addEventListener("click", () => openBoard());
 $("btn-editor").addEventListener("click", () => { openEditor(); });
+
+/* ── 경쟁전 닉네임 ── */
+function openNickOverlay() {
+  $("nick-input").value = localStorage.getItem("rescene-nick") || "";
+  $("nick-msg").textContent = "";
+  $("nick-overlay").hidden = false;
+  setTimeout(() => $("nick-input").focus(), 60);
+}
+$("nick-go").addEventListener("click", () => {
+  const name = $("nick-input").value.trim();
+  if (!name) { $("nick-msg").textContent = "닉네임을 입력해주세요!"; return; }
+  try { localStorage.setItem("rescene-nick", name); } catch (e) {}
+  $("nick-overlay").hidden = true;
+  gameMode = "rank";
+  startGame(SONGS[selectedSong], null);
+});
+$("nick-cancel").addEventListener("click", () => { $("nick-overlay").hidden = true; });
+$("nick-input").addEventListener("keydown", (e) => { if (e.key === "Enter") $("nick-go").click(); });
+
+/* ═══════════════════════════════════════════════════════════
+   ③-2 랭킹 보드 (Firebase Firestore)
+   - 경쟁전 결과만 scores/{songId}/entries 에 저장됩니다.
+   - 개인전은 어디에도 기록을 남기지 않습니다.
+   ═══════════════════════════════════════════════════════════ */
+let fbReady = null; // Promise<{db, fs}>
+function fbInit() {
+  if (!FIREBASE_CONFIG) return Promise.reject(new Error("no-config"));
+  if (!fbReady) {
+    const v = FIREBASE_SDK_VER;
+    fbReady = Promise.all([
+      import("https://www.gstatic.com/firebasejs/" + v + "/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/" + v + "/firebase-firestore.js"),
+    ]).then(([appM, fs]) => {
+      const app = appM.initializeApp(FIREBASE_CONFIG);
+      return { db: fs.getFirestore(app), fs };
+    }).catch((err) => { fbReady = null; throw err; });
+  }
+  return fbReady;
+}
+async function submitScore(rec) {
+  const { db, fs } = await fbInit();
+  await fs.addDoc(fs.collection(db, "scores", rec.songId, "entries"), {
+    name: rec.name, score: rec.score, total: rec.total, pct: rec.pct, combo: rec.combo,
+    ts: fs.serverTimestamp(),
+  });
+}
+async function fetchBoard(songId) {
+  const { db, fs } = await fbInit();
+  const q = fs.query(fs.collection(db, "scores", songId, "entries"), fs.orderBy("score", "desc"), fs.limit(50));
+  const snap = await fs.getDocs(q);
+  const rows = [];
+  snap.forEach((d) => rows.push(d.data()));
+  rows.sort((a, b) =>
+    b.score - a.score || b.pct - a.pct || b.combo - a.combo ||
+    ((a.ts && a.ts.toMillis ? a.ts.toMillis() : 0) - (b.ts && b.ts.toMillis ? b.ts.toMillis() : 0)));
+  return rows.slice(0, 20);
+}
+
+let boardSong = null;
+function openBoard(songId) {
+  boardSong = songId || (SONGS[selectedSong] && SONGS[selectedSong].id) || SONGS[0].id;
+  show("screen-board");
+  renderBoardTabs();
+  loadBoard();
+}
+function renderBoardTabs() {
+  $("board-tabs").innerHTML = SONGS.map((s) =>
+    `<button class="board-tab ${s.id === boardSong ? "sel" : ""}" data-id="${s.id}">${s.title}</button>`).join("");
+  $("board-tabs").querySelectorAll(".board-tab").forEach((b) =>
+    b.addEventListener("click", () => { boardSong = b.dataset.id; renderBoardTabs(); loadBoard(); }));
+}
+async function loadBoard() {
+  const tbody = $("board-body"), msg = $("board-msg");
+  tbody.innerHTML = "";
+  if (!FIREBASE_CONFIG) { msg.textContent = "아직 Firebase 설정이 없어요 — README의 '경쟁전 랭킹 보드 설정'을 따라 하면 랭킹 보드가 열립니다."; return; }
+  msg.textContent = "불러오는 중…";
+  try {
+    const rows = await fetchBoard(boardSong);
+    if (!rows.length) { msg.textContent = "아직 기록이 없어요 — 첫 기록의 주인공이 되어보세요!"; return; }
+    const myName = localStorage.getItem("rescene-nick") || "";
+    const medal = (i) => i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1);
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr class="${r.name === myName ? "board-me" : ""}">
+        <td class="${i < 3 ? "medal" : ""}">${medal(i)}</td>
+        <td>${escapeHtml(r.name || "?")}</td>
+        <td class="num"><b>${r.score}</b> / ${r.total}</td>
+        <td class="num">${r.pct}%</td>
+        <td class="num">${r.combo || 0}</td>
+      </tr>`).join("");
+    msg.textContent = "";
+  } catch (err) {
+    msg.textContent = "보드를 불러오지 못했어요 — 네트워크 또는 Firebase 설정을 확인해주세요.";
+  }
+}
+$("btn-board-back").addEventListener("click", () => show("screen-start"));
+$("btn-board-refresh").addEventListener("click", () => loadBoard());
 
 /* ═══════════════════════════════════════════════════════════
    ④ 게임
@@ -444,6 +737,8 @@ function startGame(song, srcOverride) {
   };
 
   $("g-song").textContent = song.title;
+  $("g-mode").textContent = gameMode === "rank" ? "경쟁전" : "개인전";
+  $("g-mode").classList.toggle("rank", gameMode === "rank");
   $("g-score").textContent = "0";
   $("g-total").textContent = parts.length;
   $("g-combo").textContent = "";
@@ -618,14 +913,27 @@ function finishGame() {
   const total = G.parts.length;
   const pct = total ? Math.round(G.score / total * 100) : 0;
   const rank = pct >= 95 ? "S" : pct >= 85 ? "A" : pct >= 70 ? "B" : pct >= 50 ? "C" : "D";
-  if ((bests[G.song.id] || 0) < G.score) bests[G.song.id] = G.score;
 
   $("answer-dock").style.display = "none";
   $("r-rank").textContent = rank;
   $("r-score").textContent = `${G.score} / ${total} 파트 정답 (${pct}%)`;
-  $("r-sub").textContent = `최대 콤보 ${G.maxCombo} · ${G.song.title} 최고 기록 ${bests[G.song.id] || 0}`;
+
+  if (gameMode === "rank") {
+    // ── 경쟁전: 내 최고 기록 갱신 + 랭킹 보드 등록 ──
+    if ((bests[G.song.id] || 0) < G.score) { bests[G.song.id] = G.score; saveBests(); }
+    $("r-sub").textContent = `최대 콤보 ${G.maxCombo} · ${G.song.title} 내 최고 ${bests[G.song.id] || 0}`;
+    $("r-save").textContent = "⏳ 랭킹 보드에 기록 등록 중…";
+    const nick = localStorage.getItem("rescene-nick") || "이름없음";
+    submitScore({ songId: G.song.id, name: nick, score: G.score, total, pct, combo: G.maxCombo })
+      .then(() => { $("r-save").textContent = `🏆 랭킹 보드에 등록 완료! (${nick})`; })
+      .catch(() => { $("r-save").textContent = "⚠️ 기록 등록에 실패했어요 — 네트워크/Firebase 설정을 확인해주세요."; });
+  } else {
+    // ── 개인전: 어디에도 기록을 남기지 않음 ──
+    $("r-sub").textContent = `최대 콤보 ${G.maxCombo}`;
+    $("r-save").textContent = "개인전 — 기록은 저장되지 않아요. 보드에 도전하려면 경쟁전으로!";
+  }
   $("result-sheet").hidden = false;
-  buildStart(); // 최고 기록 갱신 반영
+  buildStart(); // 내 최고 기록 갱신 반영
 }
 function fadeOutAudio() {
   try {
@@ -659,6 +967,7 @@ $("btn-resume").addEventListener("click", () => {
 });
 $("btn-again").addEventListener("click", () => startGame(G.song, gPlayer.src.startsWith("blob:") ? gPlayer.src : null));
 $("btn-home").addEventListener("click", () => quitToStart());
+$("btn-result-board").addEventListener("click", () => { if (G) openBoard(G.song.id); });
 $("btn-share").addEventListener("click", async () => {
   const total = G.parts.length, pct = total ? Math.round(G.score / total * 100) : 0;
   const text = `🎧 리센느 파트 맞추기 · ${G.song.title} — ${G.score}/${total} 파트 정답 (${pct}%)! ${location.href}`;
@@ -802,6 +1111,7 @@ $("ed-test").addEventListener("click", () => {
   song.parts = parts; // 새로고침 전까지 임시 적용
   edPlayer.pause();
   buildStart();
+  gameMode = "solo"; // 에디터 테스트는 항상 개인전(기록 없음)
   startGame(song, ED.srcOverride);
 });
 $("ed-gen").addEventListener("click", () => {
