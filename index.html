@@ -43,11 +43,15 @@ h1{font-family:var(--serif);font-weight:800;font-size:clamp(32px,9vw,44px);text-
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
 .rules{padding:18px 20px;font-size:14px;line-height:2;margin-bottom:18px}
 .rules b{font-weight:700}
+.notice{padding:14px 18px;font-size:13px;line-height:1.8;margin-bottom:18px;border:1.5px solid rgba(224,74,95,.35);background:rgba(224,74,95,.06)}
+.notice b{font-weight:700;color:var(--danger)}
+.notice .notice-sub{color:var(--ink-soft);font-size:12.5px}
 
 .song-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
 .song-item{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;text-align:left;width:100%;border:2px solid var(--line);background:var(--card);border-radius:16px;transition:border-color .15s, box-shadow .15s}
 .song-item.sel{border-color:#8a6fd1;box-shadow:0 0 0 3px rgba(138,111,209,.15)}
-.song-item .s-icon{width:40px;height:40px;border-radius:12px;background:var(--all-grad);color:#fff;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.song-item .s-icon{width:40px;height:40px;border-radius:12px;background:var(--all-grad);color:#fff;display:grid;place-items:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.song-item .s-icon img{width:100%;height:100%;object-fit:cover;display:block}
 .song-item .s-title{font-weight:700;font-size:16px}
 .song-item .s-meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
 .song-item .s-best{margin-left:auto;font-size:12.5px;color:var(--ink-soft);text-align:right;flex-shrink:0}
@@ -202,6 +206,13 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
       🎨 맞힌 가사는 멤버 색깔로 물듭니다.<br />
       💪 틀려도 노래는 끝까지! 점수를 최대한 쌓아보세요.<br />
       🏆 <b>경쟁전</b>은 랭킹 보드에 기록이 남고, <b>개인전</b>은 기록 없이 즐길 수 있어요.
+    </div>
+
+    <div class="card notice">
+      ⚠️ <b>주의사항</b> — 여러 목소리가 겹치게 믹싱된 파트는 <b>메인으로 부르는 멤버</b>가 누구인지
+      소리만으로 구분하기 매우 어려울 수 있어요. 그래도 정답은 <b>메인 보컬 멤버 한 명</b>이에요!<br />
+      <span class="notice-sub">🔭 나중에 영상 등으로 여러 멤버가 같은 파트를 함께 부르는 것이 확인되면,
+      여러 멤버를 동시에 선택해서 맞추는 기능을 추가할 예정이에요.</span>
     </div>
 
     <div class="song-list" id="song-list"></div>
@@ -386,10 +397,11 @@ const SONGS = [
     id: "uhuh",
     title: "UhUh",
     audio: "songs/uhuh.mp3",
+    cover: "img/cover_uhuh.jpg",
     parts: [
 /* uhuh — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
-      { start: 0.5, end: 9.8, text: "I see 넌 부정하지만 네가 Try attention", answer: "zena" },
-      { start: 9.8, end: 17.8, text: "I see through ya 달콤함 속에 끌려 넌", answer: "zena" },
+      { start: 0.5, end: 9, text: "I see 넌 부정하지만 네가 Try attention", answer: "zena" },
+      { start: 9.2, end: 17.8, text: "I see through ya 달콤함 속에 끌려 넌", answer: "zena" },
       { start: 17.8, end: 25.5, text: "아무도 보이지 않는 곳에서 Feel your tension Let you know ya It's easy to find me baby", answer: "minami" },
       { start: 25.5, end: 31.1, text: "Cause I 저 깊은 곳에서 변하려 해", answer: "liv" },
       { start: 31.1, end: 36, text: "몰랐겠지 넌 Don't even know that 꿈에서도 넌 Don't even know that", answer: "may" },
@@ -411,9 +423,10 @@ const SONGS = [
     id: "loveattack",
     title: "LOVE ATTACK",
     audio: "songs/loveattack.mp3",
+    cover: "img/cover_loveattack.jpg",
     parts: [
 /* loveattack — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
-      { start: 1, end: 4, text: "Feeling love attack!", answer: "woni" },
+      { start: 1, end: 4, text: "Feeling love attack!", answer: "all" },
       { start: 4, end: 7.2, text: "I am all you need I am all you need", answer: "zena" },
       { start: 7.2, end: 9.2, text: "So come and get it now", answer: "may" },
       { start: 9.2, end: 13, text: "I am all you need I am all you need Yeah get it", answer: "woni" },
@@ -422,8 +435,12 @@ const SONGS = [
       { start: 21.4, end: 23.5, text: "What you waiting for", answer: "woni" },
       { start: 23.5, end: 25.9, text: "I'm just waiting for", answer: "may" },
       { start: 25.9, end: 30, text: "나를 스친 깊은 끌림 직감을 Chasing", answer: "zena" },
-      { start: 30, end: 33.3, text: "Oh so strong (너를 느껴 난) Yeah so strong", answer: "minami" },
-      { start: 33.3, end: 38.3, text: "다가가 이미 난 (On and on) 너를 파헤쳐 1 2 3 4", answer: "may" },
+      { start: 30, end: 31.2, text: "Oh so strong", answer: "minami" },
+      { start: 31.2, end: 32.3, text: "너를 느껴 난", answer: "may" },
+      { start: 32.3, end: 33.3, text: "Yeah so strong", answer: "minami" },
+      { start: 33.3, end: 34.7, text: "다가가 이미 난", answer: "may" },
+      { start: 34.7, end: 35.7, text: "On and on", answer: "minami" },
+      { start: 35.7, end: 38.3, text: "너를 파헤쳐 1 2 3 4", answer: "may" },
       { start: 38.3, end: 46, text: "Like me Like me 아주 눈이 부신 너를 숨김없이 보여줘", answer: "zena" },
       { start: 46, end: 53.5, text: "한 번도 빛난 적 없었던 미지의 향으로 온 세상 물들여", answer: "woni" },
       { start: 53.5, end: 62.7, text: "새로워진 장면에 두 눈이 황홀해 너의 손을 잡을 땐 너와 어우러질 땐", answer: "minami" },
@@ -434,6 +451,7 @@ const SONGS = [
     id: "pinball",
     title: "Pinball",
     audio: "songs/pinball.mp3",
+    cover: "img/cover_pinball.jpg",
     parts: [
 /* pinball — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
       { start: 5.2, end: 10.4, text: "너만 보면 맘이 떨려 들키기 싫어 훅 멀어져도", answer: "zena" },
@@ -451,6 +469,7 @@ const SONGS = [
     id: "newworld",
     title: "New World",
     audio: "songs/newworld.mp3",
+    cover: "img/cover_newworld.jpg",
     parts: [
 /* newworld — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
       { start: 2, end: 5.5, text: "Ooh ooh hoo", answer: "liv" },
@@ -471,6 +490,7 @@ const SONGS = [
     id: "dejavu",
     title: "Deja Vu",
     audio: "songs/dejavu.mp3",
+    cover: "img/cover_dejavu.jpg",
     parts: [
 /* dejavu — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
       { start: 9.7, end: 17.4, text: "햇살 젖은 바람 잠이 든 I 물든 창문 틈새 스며든 Light", answer: "minami" },
@@ -487,6 +507,7 @@ const SONGS = [
     id: "runaway",
     title: "Runaway",
     audio: "songs/runaway.mp3",
+    cover: "img/cover_runaway.jpg",
     parts: [
 /* runaway — 1절, 자동 정렬 초안 (에디터로 미세 조정 추천) */
       { start: 12.2, end: 21.6, text: "회색빛에 갇혀버린 Neverland We know how it ends 또 의미 없이 돌고 도는 Everyday", answer: "minami" },
@@ -501,7 +522,8 @@ const SONGS = [
     id: "prettygirl",
     title: "Pretty Girl",
     audio: "songs/prettygirl.mp3",
-    /* Pretty Girl — 파트 에디터로 생성 (직접 만드신 데이터 그대로 유지) */
+    cover: "img/cover_prettygirl.jpg",
+    /* Pretty Girl — 1절 컷 (직접 만드신 파트 데이터 기반, 86초 트림) */
     parts: [
       { start: 0, end: 15, text: "Ye ye Ye ye (Yeah) (Yeah) (Yeah) Ye ye one two three yeah!", answer: "all" },
       { start: 15, end: 18, text: "If you wanna pretty Every wanna pretty", answer: "all" },
@@ -514,29 +536,7 @@ const SONGS = [
       { start: 50, end: 57, text: "Girl Pretty Girl Pretty Girl 조금도 망설일 것 없죠", answer: "liv" },
       { start: 57, end: 63, text: "난 beautiful girl Beautiful Girl Beautiful", answer: "minami" },
       { start: 63, end: 65, text: "Ye Ye Ye Ye", answer: "all" },
-      { start: 65, end: 83, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 Beautiful Girl Beautiful Ye Ye Ye Ye Come on beautiful girl Ye Ye", answer: "all" },
-      { start: 85, end: 90, text: "If you wanna pretty Every wanna pretty", answer: "all" },
-      { start: 90, end: 92, text: "안된다는 맘은", answer: "all" },
-      { start: 92, end: 93.5, text: "no no no no", answer: "all" },
-      { start: 93.5, end: 97, text: "If you wanna pretty Every wanna pretty", answer: "all" },
-      { start: 97, end: 103, text: "어디서나 당당하게 걷기", answer: "may" },
-      { start: 104, end: 111, text: "Girl Pretty Girl Pretty Girl 조금이도 망설일 것 없죠", answer: "minami" },
-      { start: 111, end: 117, text: "난 beautiful girl Beautiful Girl Beautiful", answer: "zena" },
-      { start: 117, end: 118.5, text: "Ye Ye Ye Ye", answer: "all" },
-      { start: 118.5, end: 133, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 beautiful girl Beautiful Ye Ye Ye Ye come on beautiful girl", answer: "all" },
-      { start: 133, end: 134.5, text: "마음은 예쁘게", answer: "woni" },
-      { start: 134.5, end: 136, text: "표정은 산뜻하게", answer: "may" },
-      { start: 136, end: 140, text: "하룰 시작하면서 잊지 말아야 하죠", answer: "zena" },
-      { start: 140, end: 143, text: "두 눈을 깜빡이며 살짝 미소 지으면", answer: "liv" },
-      { start: 143, end: 147, text: "이젠 모든 게 완벽하죠", answer: "minami" },
-      { start: 147, end: 161, text: "Girl! Pretty Girl Pretty Girl 누구라도 될 수 있죠 난 beautiful girl Beautiful Ye Ye Ye Ye Ye Ye Ye Ye", answer: "all" },
-      { start: 161, end: 176, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 beautiful girl Beautiful girl Ye Yei-ye Ye", answer: "all" },
-      { start: 176, end: 179, text: "If you wanna pretty Every wanna pretty", answer: "all" },
-      { start: 179, end: 181, text: "안 된다는 맘은", answer: "all" },
-      { start: 181, end: 183, text: "no no no no", answer: "all" },
-      { start: 183, end: 186, text: "If you wanna pretty Every wanna pretty", answer: "all" },
-      { start: 186, end: 192, text: "어디서나 당당하게 걷기", answer: "woni" },
-      { start: 192, end: 210, text: "Ye Ye (Yeah) (Yeah) (Yeah) Ye Ye (Yeah) (Yeah) (Yeah) Ye Ye", answer: "all" },
+      { start: 65, end: 83, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 Beautiful Girl Beautiful Ye Ye Ye Ye Come on beautiful girl Ye Ye", answer: "all" }
     ],
   },
 ];
@@ -586,7 +586,7 @@ function buildStart() {
 
   $("song-list").innerHTML = SONGS.map((s, i) => `
     <button class="song-item ${i === selectedSong ? "sel" : ""}" data-i="${i}">
-      <span class="s-icon">♪</span>
+      <span class="s-icon">${s.cover ? '<img src="' + s.cover + '" alt="" onerror="this.remove()">' : "♪"}</span>
       <span>
         <span class="s-title">${s.title}</span>
         <div class="s-meta">${s.parts.length ? s.parts.length + "개 파트" : "파트 데이터 없음 — 에디터에서 만들기"}</div>
