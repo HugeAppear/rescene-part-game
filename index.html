@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>리센느 파트 맞추기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --ink:#2b2140;
+  --ink-soft:#6f6486;
+  --paper:#fbf8fd;
+  --card:rgba(255,255,255,.85);
+  --line:rgba(43,33,64,.10);
+  --shadow:0 10px 30px rgba(43,33,64,.10);
+  --danger:#e04a5f;
+  --ok:#2fae7d;
+  --serif:"Noto Serif KR", serif;
+  --sans:"Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --all-grad:linear-gradient(90deg,#e85d75,#e8a13c,#3ba98f,#4e8fd9,#8a6fd1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--sans);color:var(--ink);background:var(--paper);-webkit-tap-highlight-color:transparent}
+button{font-family:var(--sans)}
+
+.mist{position:fixed;inset:0;z-index:-1;overflow:hidden;background:linear-gradient(170deg,#f6f0fb 0%,#fdf5f2 55%,#f3f2fb 100%)}
+.mist::before,.mist::after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.55}
+.mist::before{width:60vmax;height:60vmax;left:-20vmax;top:-24vmax;background:radial-gradient(circle,#e6d6f7 0%,transparent 65%)}
+.mist::after{width:55vmax;height:55vmax;right:-18vmax;bottom:-22vmax;background:radial-gradient(circle,#fbd9dd 0%,transparent 65%)}
+
+.screen{display:none}
+.screen.active{display:block;animation:rise .4s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* ═══ 시작 화면 ═══ */
+.wrap{max-width:580px;margin:0 auto;padding:30px 18px 60px}
+.eyebrow{letter-spacing:.35em;font-size:12px;font-weight:700;color:var(--ink-soft);text-align:center}
+h1{font-family:var(--serif);font-weight:800;font-size:clamp(32px,9vw,44px);text-align:center;margin:10px 0 6px;line-height:1.2}
+.tagline{text-align:center;color:var(--ink-soft);font-size:14.5px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);backdrop-filter:blur(8px)}
+.rules{padding:18px 20px;font-size:14px;line-height:2;margin-bottom:18px}
+.rules b{font-weight:700}
+
+.song-list{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.song-item{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;text-align:left;width:100%;border:2px solid var(--line);background:var(--card);border-radius:16px;transition:border-color .15s, box-shadow .15s}
+.song-item.sel{border-color:#8a6fd1;box-shadow:0 0 0 3px rgba(138,111,209,.15)}
+.song-item .s-icon{width:40px;height:40px;border-radius:12px;background:var(--all-grad);color:#fff;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.song-item .s-title{font-weight:700;font-size:16px}
+.song-item .s-meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+.song-item .s-best{margin-left:auto;font-size:12.5px;color:var(--ink-soft);text-align:right;flex-shrink:0}
+.song-item .s-best b{display:block;font-size:16px;color:var(--ink)}
+
+.legend{display:flex;justify-content:center;gap:13px;flex-wrap:wrap;margin:6px 0 20px}
+.legend .dot{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft)}
+.legend .dot i{width:15px;height:15px;border-radius:50%;box-shadow:0 0 0 3px #fff,0 2px 6px rgba(0,0,0,.15)}
+
+.btn{display:block;width:100%;border:none;cursor:pointer;font-weight:700;border-radius:16px;transition:transform .12s,box-shadow .12s}
+.btn:active{transform:scale(.97)}
+.btn-primary{padding:16px;font-size:17px;color:#fff;background:linear-gradient(120deg,#7a5fd0,#c76a9e);box-shadow:0 8px 22px rgba(122,95,208,.35)}
+.btn-ghost{padding:13px;font-size:14.5px;color:var(--ink);background:#fff;border:1px solid var(--line)}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+.editor-link{display:block;text-align:center;margin-top:16px;font-size:13.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;width:100%}
+.start-msg{text-align:center;font-size:13px;color:var(--danger);margin-top:12px;min-height:1em}
+
+/* ═══ 게임 화면 (전체 높이 앱 레이아웃) ═══ */
+.game-shell{position:fixed;inset:0;display:none;flex-direction:column;background:transparent;z-index:5}
+.game-shell.active{display:flex}
+.game-head{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;flex-shrink:0}
+.icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.8);cursor:pointer;font-size:15px;color:var(--ink);flex-shrink:0}
+.head-mid{flex:1;min-width:0;text-align:center}
+.g-song{font-family:var(--serif);font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g-score{font-size:13px;color:var(--ink-soft);margin-top:1px}
+.g-score b{font-size:16px;color:var(--ink)}
+.g-combo{color:#c76a9e;font-weight:700}
+
+.lyrics{flex:1;overflow-y:auto;padding:12px 18px 30vh;-webkit-overflow-scrolling:touch}
+.line{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border-radius:14px;margin-bottom:2px;transition:background .2s, transform .2s;position:relative}
+.line .mark{width:22px;height:22px;border-radius:50%;flex-shrink:0;margin-top:2px;font-size:12px;display:grid;place-items:center;color:#fff;background:rgba(43,33,64,.10)}
+.line .body{min-width:0}
+.line .txt{font-size:16.5px;line-height:1.55;font-weight:500;color:#8d84a3;word-break:keep-all;transition:color .2s}
+.line .who{display:block;font-size:11.5px;margin-top:3px;color:var(--ink-soft);min-height:0}
+.line.current{background:rgba(255,255,255,.9);box-shadow:var(--shadow);transform:scale(1.02)}
+.line.current .txt{color:var(--ink);font-weight:700}
+.line.current .mark{background:var(--all-grad);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.line.correct .txt{color:var(--mc);font-weight:700}
+.line.correct .mark{background:var(--ok)}
+.line.correct .mark::before{content:"✓"}
+.line.wrong .txt{color:var(--mc);font-weight:700;opacity:.85}
+.line.wrong .mark{background:var(--danger)}
+.line.wrong .mark::before{content:"✗"}
+.line.missed .txt{color:#b3aec2;text-decoration:line-through;text-decoration-thickness:1px}
+.line.missed .mark{background:#c9c4d6}
+.line.missed .mark::before{content:"–"}
+.line.all-part.correct .txt, .line.all-part.wrong .txt{background:var(--all-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* 하단 답 버튼 바 */
+.answer-dock{flex-shrink:0;background:rgba(255,255,255,.92);border-top:1px solid var(--line);backdrop-filter:blur(10px);padding:0 8px calc(10px + env(safe-area-inset-bottom));position:relative}
+.part-progress{position:absolute;top:-3px;left:0;height:3px;width:0;background:var(--all-grad);border-radius:0 3px 3px 0;transition:width .1s linear}
+.dock-pill{text-align:center;font-size:11.5px;color:var(--ink-soft);padding:6px 0 2px;min-height:22px}
+.answer-bar{display:flex;justify-content:center;gap:6px;padding:2px 0 6px}
+.answer-bar.wiggle{animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.ans-btn{--mc:#999;flex:0 1 62px;min-width:52px;background:none;border:none;cursor:pointer;padding:4px 2px;border-radius:12px;transition:transform .1s}
+.ans-btn:active{transform:scale(.9)}
+.ans-avatar{display:block;width:46px;height:46px;border-radius:50%;margin:0 auto 3px;position:relative;overflow:hidden;background:var(--mc);box-shadow:0 0 0 2.5px var(--mc);color:#fff;font-weight:800;font-size:16px}
+.ans-avatar span{position:absolute;inset:0;display:grid;place-items:center}
+.ans-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ans-btn.all-btn .ans-avatar{background:conic-gradient(#e85d75,#e8a13c,#3ba98f,#4e8fd9,#8a6fd1,#e85d75);box-shadow:0 0 0 2.5px #8a6fd1;font-size:11px;letter-spacing:.05em}
+.ans-name{display:block;font-size:11px;font-weight:700;color:var(--ink)}
+.answer-bar.idle .ans-btn{opacity:.4;filter:grayscale(.4)}
+.plus-float{position:fixed;pointer-events:none;font-family:var(--serif);font-weight:800;font-size:26px;z-index:99;opacity:0}
+.plus-float.go{animation:floatUp .7s ease forwards}
+@keyframes floatUp{0%{opacity:0;transform:translateY(0) scale(.7)}25%{opacity:1;transform:translateY(-18px) scale(1.1)}100%{opacity:0;transform:translateY(-46px) scale(1)}}
+
+/* 카운트다운 / 일시정지 오버레이 */
+.overlay{position:fixed;inset:0;background:rgba(43,33,64,.45);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:20}
+.overlay[hidden]{display:none}
+.count-num{font-family:var(--serif);font-weight:800;font-size:110px;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.3);animation:pop .7s ease}
+@keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+.pause-card{background:#fff;border-radius:22px;padding:28px 26px;width:min(320px,86vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.pause-card h3{font-family:var(--serif);font-size:22px;margin-bottom:18px}
+.pause-card .btn{margin-top:10px}
+
+/* 결과 시트 */
+.result-sheet{flex-shrink:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);backdrop-filter:blur(10px);padding:18px 20px calc(16px + env(safe-area-inset-bottom));text-align:center;box-shadow:0 -10px 30px rgba(43,33,64,.10)}
+.r-rank{font-family:var(--serif);font-weight:800;font-size:46px;line-height:1;background:var(--all-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.r-score{font-size:16px;font-weight:700;margin-top:6px}
+.r-sub{font-size:12.5px;color:var(--ink-soft);margin:4px 0 14px}
+
+/* ═══ 에디터 ═══ */
+.ed-wrap{max-width:640px;margin:0 auto;padding:20px 16px 80px}
+.ed-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.ed-head h2{font-family:var(--serif);font-size:20px;flex:1}
+.ed-step{padding:16px 16px 18px;margin-bottom:14px}
+.ed-step h3{font-size:14.5px;margin-bottom:10px}
+.ed-step h3 small{font-weight:400;color:var(--ink-soft)}
+.ed-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ed-input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:var(--sans)}
+textarea.ed-input{width:100%;min-height:110px;line-height:1.8;resize:vertical}
+.mini-btn{padding:9px 14px;font-size:13px;font-weight:700;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink);white-space:nowrap}
+.mini-btn:active{transform:scale(.96)}
+.mini-btn.accent{background:linear-gradient(120deg,#7a5fd0,#c76a9e);color:#fff;border:none}
+.mini-btn.big{padding:13px 18px;font-size:15px}
+.ed-audio-ctrl{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.ed-time{font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink-soft);min-width:96px}
+input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
+.stamp-zone{position:sticky;bottom:10px;z-index:8;display:flex;gap:8px;margin:14px 0}
+.stamp-zone .mini-btn{flex:1;padding:15px 8px;font-size:15px;box-shadow:var(--shadow)}
+.ed-table{width:100%;border-collapse:collapse;font-size:13px}
+.ed-table th{text-align:left;color:var(--ink-soft);font-weight:500;padding:4px 6px;font-size:11.5px}
+.ed-table td{padding:5px 4px;border-top:1px solid var(--line);vertical-align:middle}
+.ed-table tr.armed td{background:rgba(138,111,209,.08)}
+.ed-table input[type=number]{width:64px;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:12.5px}
+.ed-table input[type=text]{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+.ed-table select{padding:6px;border:1px solid var(--line);border-radius:8px;font-size:12.5px;background:#fff}
+.ed-table .row-play{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:11px}
+.ed-out{width:100%;min-height:140px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.6;padding:12px;border:1px solid var(--line);border-radius:12px;margin-top:10px;white-space:pre;overflow:auto}
+.ed-msg{font-size:13px;color:var(--danger);margin-top:8px;min-height:1em}
+.ed-hint{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin-top:8px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="mist" aria-hidden="true"></div>
+
+<!-- ═══════════ 시작 화면 ═══════════ -->
+<section id="screen-start" class="screen active">
+  <div class="wrap">
+    <p class="eyebrow">RESCENE · 리센느</p>
+    <h1>파트 맞추기</h1>
+    <p class="tagline">가사를 따라가며, 지금 부르는 멤버를 실시간으로 맞춰보세요.</p>
+
+    <div class="card rules">
+      🎤 노래가 흐르면 가사가 한 줄씩 하이라이트됩니다.<br />
+      👆 그 파트를 부르는 멤버 버튼을 누르세요. 다 같이 부르면 <b>떼창</b>!<br />
+      🎨 맞힌 가사는 멤버 색깔로 물듭니다.<br />
+      💪 틀려도 노래는 끝까지! 점수를 최대한 쌓아보세요.
+    </div>
+
+    <div class="song-list" id="song-list"></div>
+    <div class="legend" id="legend"></div>
+    <button class="btn btn-primary" id="btn-start">게임 시작</button>
+    <p class="start-msg" id="start-msg"></p>
+    <button class="editor-link" id="btn-editor">🛠 파트 에디터 — 가사·타이밍 직접 만들기</button>
+  </div>
+</section>
+
+<!-- ═══════════ 게임 화면 ═══════════ -->
+<section id="screen-game" class="game-shell">
+  <header class="game-head">
+    <button class="icon-btn" id="btn-quit" aria-label="나가기">✕</button>
+    <div class="head-mid">
+      <div class="g-song" id="g-song"></div>
+      <div class="g-score"><b id="g-score">0</b> / <span id="g-total">0</span> <span class="g-combo" id="g-combo"></span></div>
+    </div>
+    <button class="icon-btn" id="btn-pause" aria-label="일시정지">⏸</button>
+  </header>
+
+  <div class="lyrics" id="lyrics"></div>
+
+  <div class="answer-dock" id="answer-dock">
+    <i class="part-progress" id="part-progress"></i>
+    <div class="dock-pill" id="dock-pill"></div>
+    <div class="answer-bar" id="answer-bar"></div>
+  </div>
+
+  <div class="result-sheet" id="result-sheet" hidden>
+    <div class="r-rank" id="r-rank">A</div>
+    <div class="r-score" id="r-score"></div>
+    <div class="r-sub" id="r-sub"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-again">다시 하기</button>
+      <button class="btn btn-ghost" id="btn-home">곡 선택</button>
+      <button class="btn btn-ghost" id="btn-share">공유</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="countdown" hidden><div class="count-num" id="count-num">3</div></div>
+  <div class="overlay" id="pause-overlay" hidden>
+    <div class="pause-card">
+      <h3>일시정지</h3>
+      <button class="btn btn-primary" id="btn-resume">계속하기</button>
+      <button class="btn btn-ghost" id="btn-quit2">그만두기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 파트 에디터 ═══════════ -->
+<section id="screen-editor" class="screen">
+  <div class="ed-wrap">
+    <div class="ed-head">
+      <button class="icon-btn" id="btn-ed-back">←</button>
+      <h2>🛠 파트 에디터</h2>
+    </div>
+
+    <div class="card ed-step">
+      <h3>1. 음원 불러오기</h3>
+      <div class="ed-row">
+        <select class="ed-input" id="ed-song-sel"></select>
+        <label class="mini-btn">파일 선택<input type="file" id="ed-file" accept="audio/*" hidden /></label>
+      </div>
+      <div class="ed-audio-ctrl">
+        <button class="mini-btn" id="ed-play">▶ 재생</button>
+        <button class="mini-btn" id="ed-back5">−5초</button>
+        <button class="mini-btn" id="ed-rate">1.0×</button>
+        <span class="ed-time" id="ed-time">0:00.0 / 0:00</span>
+      </div>
+      <div class="ed-audio-ctrl">
+        <input type="range" id="ed-seek" min="0" max="100" step="0.1" value="0" />
+      </div>
+      <p class="ed-hint" id="ed-audio-msg">파일이 로드되지 않으면 [파일 선택]으로 mp3를 직접 불러오세요.</p>
+    </div>
+
+    <div class="card ed-step">
+      <h3>2. 가사 입력 <small>— 파트 한 개당 한 줄씩</small></h3>
+      <textarea class="ed-input" id="ed-lyrics" placeholder="첫 번째 파트 가사
+두 번째 파트 가사
+세 번째 파트 가사
+…"></textarea>
+      <div class="ed-row" style="margin-top:10px">
+        <button class="mini-btn accent" id="ed-build">↓ 표 만들기</button>
+        <span class="ed-hint">줄을 바꾸면 파트가 나뉩니다. 멤버가 바뀔 때마다 줄을 나누세요.</span>
+      </div>
+    </div>
+
+    <div class="card ed-step" id="ed-step3" hidden>
+      <h3>3. 타이밍 찍기 <small>— 노래를 들으면서 파트가 시작될 때마다 누르기 (스페이스바 가능)</small></h3>
+      <div class="stamp-zone">
+        <button class="mini-btn accent big" id="ed-stamp">⏺ 여기부터 다음 파트</button>
+        <button class="mini-btn big" id="ed-end-stamp">⏹ 파트 끝</button>
+      </div>
+      <p class="ed-hint">
+        · <b>여기부터 다음 파트</b>: 새 파트가 시작되는 순간 누르세요. 이전 파트의 끝시간도 자동으로 채워집니다.<br />
+        · <b>파트 끝</b>: 파트가 끝나고 간주(공백)가 이어질 때만 누르면 됩니다.<br />
+        · 찍은 뒤 표에서 숫자를 직접 다듬고, ▶로 구간을 확인하세요.
+      </p>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table class="ed-table" id="ed-table">
+          <thead><tr><th>#</th><th></th><th>가사</th><th>시작</th><th>끝</th><th>정답</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="ed-row" style="margin-top:12px">
+        <button class="mini-btn" id="ed-reset-time">타이밍 초기화</button>
+      </div>
+    </div>
+
+    <div class="card ed-step" id="ed-step4" hidden>
+      <h3>4. 완성</h3>
+      <div class="ed-row">
+        <button class="mini-btn accent big" id="ed-test">🎮 게임으로 바로 테스트</button>
+        <button class="mini-btn big" id="ed-gen">📋 코드 생성</button>
+        <button class="mini-btn" id="ed-copy" hidden>복사</button>
+      </div>
+      <p class="ed-msg" id="ed-msg"></p>
+      <textarea class="ed-out" id="ed-out" hidden readonly></textarea>
+      <p class="ed-hint">코드를 복사해 index.html 상단 <b>SONGS</b> 안 해당 곡의 <b>parts: [ ]</b> 자리에 붙여넣으면 영구 저장됩니다. (바로 테스트는 새로고침 전까지만 유지)</p>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   ① 여기만 수정하면 됩니다 — 멤버 / 곡 데이터
+   ═══════════════════════════════════════════════════════════ */
+const MEMBERS = {
+  woni:   { name: "원이",   en: "WONI",   color: "#e85d75", img: "img/woni.jpg"   },
+  liv:    { name: "리브",   en: "LIV",    color: "#4e8fd9", img: "img/liv.jpg"    },
+  minami: { name: "미나미", en: "MINAMI", color: "#8a6fd1", img: "img/minami.jpg" },
+  may:    { name: "메이",   en: "MAY",    color: "#e8a13c", img: "img/may.jpg"   },
+  zena:   { name: "제나",   en: "ZENA",   color: "#3ba98f", img: "img/zena.jpg"   },
+};
+const ALL_KEY = "all"; // 떼창(전원 파트)
+
+/* 곡 목록.
+   parts 는 [파트 에디터]로 만들어 붙여넣는 것을 추천합니다.
+   각 파트: { start: 시작초, end: 끝초, text: "가사 한 줄", answer: "woni|liv|minami|may|zena|all" }
+
+   ※ 아래 Pretty Girl 의 parts 는 게임 동작을 미리 볼 수 있게 넣어둔
+      "데모 데이터"(타이밍·가사·정답 모두 가짜)입니다.
+      에디터에서 실제 가사와 타이밍으로 만들어 교체하세요! */
+const SONGS = [
+  {
+    id: "prettygirl",
+    title: "Pretty Girl",
+    audio: "songs/prettygirl.mp3",
+    parts: [
+/* Pretty Girl — 파트 에디터로 생성 */
+parts: [
+      { start: 0, end: 15, text: "Ye ye Ye ye (Yeah) (Yeah) (Yeah) Ye ye one two three yeah!", answer: "all" },
+      { start: 15, end: 18, text: "If you wanna pretty Every wanna pretty", answer: "all" },
+      { start: 18, end: 20, text: "안 된다는 맘은", answer: "woni" },
+      { start: 20, end: 22, text: "no no no no", answer: "all" },
+      { start: 22, end: 25, text: "If you wanna pretty Every wanna pretty", answer: "all" },
+      { start: 25, end: 35, text: "어디서나 당당하게 걷기", answer: "may" },
+      { start: 35, end: 43, text: "나와 맞는 옷에 또 받쳐주는 말투 센스있는 포즈 그냥 되지는 않죠", answer: "zena" },
+      { start: 43, end: 50, text: "생활 상식은 기본 시사상식은 선택 다 끊임없는 노력이죠", answer: "minami" },
+      { start: 50, end: 57, text: "Girl Pretty Girl Pretty Girl 조금도 망설일 것 없죠", answer: "liv" },
+      { start: 57, end: 63, text: "난 beautiful girl Beautiful Girl Beautiful", answer: "minami" },
+      { start: 63, end: 65, text: "Ye Ye Ye Ye", answer: "all" },
+      { start: 65, end: 83, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 Beautiful Girl Beautiful Ye Ye Ye Ye Come on beautiful girl Ye Ye", answer: "all" },
+      { start: 85, end: 90, text: "If you wanna pretty Every wanna pretty", answer: "all" },
+      { start: 90, end: 92, text: "안된다는 맘은", answer: "all" },
+      { start: 92, end: 93.5, text: "no no no no", answer: "all" },
+      { start: 93.5, end: 97, text: "If you wanna pretty Every wanna pretty", answer: "all" },
+      { start: 97, end: 103, text: "어디서나 당당하게 걷기", answer: "may" },
+      { start: 104, end: 111, text: "Girl Pretty Girl Pretty Girl 조금이도 망설일 것 없죠", answer: "minami" },
+      { start: 111, end: 117, text: "난 beautiful girl Beautiful Girl Beautiful", answer: "zena" },
+      { start: 117, end: 118.5, text: "Ye Ye Ye Ye", answer: "all" },
+      { start: 118.5, end: 133, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 beautiful girl Beautiful Ye Ye Ye Ye come on beautiful girl", answer: "all" },
+      { start: 133, end: 134.5, text: "마음은 예쁘게", answer: "woni" },
+      { start: 134.5, end: 136, text: "표정은 산뜻하게", answer: "may" },
+      { start: 136, end: 140, text: "하룰 시작하면서 잊지 말아야 하죠", answer: "zena" },
+      { start: 140, end: 143, text: "두 눈을 깜빡이며 살짝 미소 지으면", answer: "liv" },
+      { start: 143, end: 147, text: "이젠 모든 게 완벽하죠", answer: "minami" },
+      { start: 147, end: 161, text: "Girl! Pretty Girl Pretty Girl 누구라도 될 수 있죠 난 beautiful girl Beautiful Ye Ye Ye Ye Ye Ye Ye Ye", answer: "all" },
+      { start: 161, end: 176, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 beautiful girl Beautiful girl Ye Yei-ye Ye", answer: "all" },
+      { start: 176, end: 179, text: "If you wanna pretty Every wanna pretty", answer: "all" },
+      { start: 179, end: 181, text: "안 된다는 맘은", answer: "all" },
+      { start: 181, end: 183, text: "no no no no", answer: "all" },
+      { start: 183, end: 186, text: "If you wanna pretty Every wanna pretty", answer: "all" },
+      { start: 186, end: 192, text: "어디서나 당당하게 걷기", answer: "woni" },
+      { start: 192, end: 210, text: "Ye Ye (Yeah) (Yeah) (Yeah) Ye Ye (Yeah) (Yeah) (Yeah) Ye Ye", answer: "all" },
+],
+    ],
+  },
+  /* 새 곡 추가 예시:
+  { id: "uhuh", title: "UhUh", audio: "songs/uhuh.mp3", parts: [] },
+  */
+];
+
+const GRACE = 1.0; // 파트가 끝난 뒤에도 답할 수 있는 여유 시간(초)
+
+/* ═══════════════════════════════════════════════════════════
+   ② 공통
+   ═══════════════════════════════════════════════════════════ */
+const $ = (id) => document.getElementById(id);
+const memberLabel = (key) => key === ALL_KEY ? "떼창" : (MEMBERS[key] ? MEMBERS[key].name : key);
+const fmt = (s) => { const m = Math.floor(s / 60), r = s - m * 60; return m + ":" + (r < 10 ? "0" : "") + r.toFixed(1); };
+function show(id) {
+  document.querySelectorAll(".screen, .game-shell").forEach((s) => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ③ 시작 화면
+   ═══════════════════════════════════════════════════════════ */
+let selectedSong = 0;
+const bests = {}; // { songId: 최고점수 } — 저장 방법은 README 참고
+
+function buildStart() {
+  $("legend").innerHTML =
+    Object.values(MEMBERS).map((m) => `<span class="dot"><i style="background:${m.color}"></i>${m.name}</span>`).join("") +
+    `<span class="dot"><i style="background:conic-gradient(#e85d75,#e8a13c,#3ba98f,#4e8fd9,#8a6fd1,#e85d75)"></i>떼창</span>`;
+
+  $("song-list").innerHTML = SONGS.map((s, i) => `
+    <button class="song-item ${i === selectedSong ? "sel" : ""}" data-i="${i}">
+      <span class="s-icon">♪</span>
+      <span>
+        <span class="s-title">${s.title}</span>
+        <div class="s-meta">${s.parts.length ? s.parts.length + "개 파트" : "파트 데이터 없음 — 에디터에서 만들기"}</div>
+      </span>
+      <span class="s-best">최고<b>${bests[s.id] || 0}</b></span>
+    </button>`).join("");
+  document.querySelectorAll(".song-item").forEach((el) =>
+    el.addEventListener("click", () => { selectedSong = +el.dataset.i; buildStart(); })
+  );
+}
+
+$("btn-start").addEventListener("click", () => {
+  const song = SONGS[selectedSong];
+  if (!song.parts.length) {
+    $("start-msg").textContent = "이 곡은 아직 파트 데이터가 없어요. 파트 에디터에서 먼저 만들어주세요!";
+    return;
+  }
+  $("start-msg").textContent = "";
+  startGame(song, null);
+});
+$("btn-editor").addEventListener("click", () => { openEditor(); });
+
+/* ═══════════════════════════════════════════════════════════
+   ④ 게임
+   ═══════════════════════════════════════════════════════════ */
+const gPlayer = new Audio();
+gPlayer.preload = "auto";
+
+let G = null; // 현재 게임 상태
+
+function startGame(song, srcOverride) {
+  const parts = [...song.parts].sort((a, b) => a.start - b.start);
+  G = {
+    song, parts,
+    state: new Array(parts.length).fill(null), // null | correct | wrong | missed
+    guesses: new Array(parts.length).fill(null),
+    score: 0, combo: 0, maxCombo: 0,
+    curIdx: -1, answerable: -1,
+    finished: false, raf: null,
+  };
+
+  $("g-song").textContent = song.title;
+  $("g-score").textContent = "0";
+  $("g-total").textContent = parts.length;
+  $("g-combo").textContent = "";
+  $("dock-pill").textContent = "";
+  $("part-progress").style.width = "0";
+  $("result-sheet").hidden = true;
+  $("answer-dock").style.display = "";
+  buildAnswerBar();
+  buildLyrics();
+
+  gPlayer.src = srcOverride || song.audio;
+  gPlayer.playbackRate = 1;
+  gPlayer.volume = 1;
+  gPlayer.currentTime = 0;
+
+  show("screen-game");
+
+  // 오디오 잠금 해제(모바일) 후 카운트다운
+  gPlayer.muted = true;
+  const unlock = gPlayer.play();
+  if (unlock) unlock.then(() => { gPlayer.pause(); gPlayer.currentTime = 0; gPlayer.muted = false; })
+                    .catch(() => { gPlayer.muted = false; });
+  runCountdown(3, () => {
+    gPlayer.play().catch(() => {
+      $("dock-pill").textContent = "▶ 재생이 차단됐어요 — 화면을 한 번 탭해주세요";
+      const kick = () => { gPlayer.play(); document.removeEventListener("pointerdown", kick); };
+      document.addEventListener("pointerdown", kick);
+    });
+    G.raf = requestAnimationFrame(loop);
+  });
+}
+
+function runCountdown(n, done) {
+  const ov = $("countdown"), num = $("count-num");
+  ov.hidden = false;
+  const step = (k) => {
+    if (k === 0) { ov.hidden = true; done(); return; }
+    num.textContent = k;
+    num.style.animation = "none"; void num.offsetWidth; num.style.animation = "";
+    setTimeout(() => step(k - 1), 750);
+  };
+  step(n);
+}
+
+function buildAnswerBar() {
+  const btns = Object.entries(MEMBERS).map(([key, m]) => `
+    <button class="ans-btn" data-key="${key}" style="--mc:${m.color}">
+      <span class="ans-avatar"><span>${m.name[0]}</span><img src="${m.img}" alt="" onerror="this.remove()" /></span>
+      <span class="ans-name">${m.name}</span>
+    </button>`).join("");
+  $("answer-bar").innerHTML = btns + `
+    <button class="ans-btn all-btn" data-key="${ALL_KEY}">
+      <span class="ans-avatar"><span>ALL</span></span>
+      <span class="ans-name">떼창</span>
+    </button>`;
+  document.querySelectorAll("#answer-bar .ans-btn").forEach((b) =>
+    b.addEventListener("click", (e) => answer(b.dataset.key, e))
+  );
+}
+
+function buildLyrics() {
+  $("lyrics").innerHTML = G.parts.map((p, i) => `
+    <div class="line ${p.answer === ALL_KEY ? "all-part" : ""}" id="line-${i}"
+         style="--mc:${p.answer === ALL_KEY ? "#8a6fd1" : (MEMBERS[p.answer] ? MEMBERS[p.answer].color : "#999")}">
+      <span class="mark"></span>
+      <span class="body"><span class="txt">${escapeHtml(p.text)}</span><span class="who"></span></span>
+    </div>`).join("");
+  $("lyrics").scrollTop = 0;
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+function loop() {
+  if (!G || G.finished) return;
+  const t = gPlayer.currentTime;
+  const parts = G.parts;
+
+  // 현재 파트 인덱스 갱신
+  let idx = G.curIdx;
+  while (idx + 1 < parts.length && t >= parts[idx + 1].start) idx++;
+  while (idx >= 0 && t < parts[idx].start) idx--;
+  if (idx !== G.curIdx) {
+    G.curIdx = idx;
+    document.querySelectorAll(".line.current").forEach((el) => el.classList.remove("current"));
+    if (idx >= 0 && !G.state[idx]) {
+      const el = $("line-" + idx);
+      el.classList.add("current");
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }
+
+  // 지나간 파트 놓침 처리
+  for (let i = 0; i <= idx; i++) {
+    if (!G.state[i] && (i < idx || t >= parts[i].end + GRACE)) resolvePart(i, "missed", null);
+  }
+
+  // 지금 답할 수 있는 파트
+  G.answerable = (idx >= 0 && !G.state[idx] && t < parts[idx].end + GRACE) ? idx : -1;
+  $("answer-bar").classList.toggle("idle", G.answerable < 0);
+
+  // 파트 진행 바 + 안내 문구
+  if (G.answerable >= 0) {
+    const p = parts[G.answerable];
+    const r = Math.min(1, Math.max(0, (t - p.start) / (p.end - p.start)));
+    $("part-progress").style.width = (r * 100) + "%";
+    $("dock-pill").textContent = "지금 누가 부르고 있을까요?";
+  } else {
+    $("part-progress").style.width = "0";
+    $("dock-pill").textContent = idx + 1 < parts.length ? "다음 파트 대기 중…" : "";
+  }
+
+  // 종료 판정: 모든 파트 처리 완료 + 마지막 파트 이후
+  const lastEnd = parts[parts.length - 1].end;
+  if (G.state.every(Boolean) && t > lastEnd + 2) { finishGame(); return; }
+
+  G.raf = requestAnimationFrame(loop);
+}
+
+gPlayer.addEventListener("ended", () => { if (G && !G.finished && $("screen-game").classList.contains("active")) finishGameFromEnded(); });
+function finishGameFromEnded() {
+  // 곡이 끝났는데 미처리 파트가 있으면 놓침 처리
+  G.parts.forEach((p, i) => { if (!G.state[i]) resolvePart(i, "missed", null); });
+  finishGame();
+}
+gPlayer.addEventListener("error", () => {
+  if (!$("screen-game").classList.contains("active") || !G || G.finished) return;
+  cancelAnimationFrame(G.raf);
+  $("dock-pill").textContent = "";
+  quitToStart("음원을 불러올 수 없어요. 로컬이라면 간단한 서버로 열거나, 에디터의 [파일 선택]으로 mp3를 불러와 테스트해보세요.");
+});
+
+function answer(key, e) {
+  if (!G || G.finished) return;
+  if (G.answerable < 0) { const bar = $("answer-bar"); bar.classList.remove("wiggle"); void bar.offsetWidth; bar.classList.add("wiggle"); return; }
+  const i = G.answerable;
+  const p = G.parts[i];
+  const correct = p.answer === key;
+  resolvePart(i, correct ? "correct" : "wrong", key);
+
+  if (correct) {
+    G.score++; G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
+    $("g-score").textContent = G.score;
+    $("g-combo").textContent = G.combo >= 2 ? "🔥" + G.combo : "";
+    // +1 플로팅
+    const f = document.createElement("div");
+    f.className = "plus-float go"; f.textContent = "+1";
+    f.style.color = key === ALL_KEY ? "#8a6fd1" : MEMBERS[key].color;
+    f.style.left = (e.clientX - 10) + "px"; f.style.top = (e.clientY - 40) + "px";
+    document.body.appendChild(f); setTimeout(() => f.remove(), 750);
+  } else {
+    G.combo = 0; $("g-combo").textContent = "";
+  }
+}
+
+function resolvePart(i, result, guessKey) {
+  G.state[i] = result;
+  G.guesses[i] = guessKey;
+  if (result !== "correct" && result !== "wrong") G.combo = 0, $("g-combo").textContent = "";
+  const el = $("line-" + i);
+  el.classList.remove("current");
+  el.classList.add(result);
+  const p = G.parts[i];
+  const who = el.querySelector(".who");
+  if (result === "correct") who.textContent = memberLabel(p.answer);
+  else if (result === "wrong") who.textContent = "정답 " + memberLabel(p.answer) + " · 내 답 " + memberLabel(guessKey);
+  else who.textContent = "놓침 · 정답 " + memberLabel(p.answer);
+}
+
+function finishGame() {
+  G.finished = true;
+  cancelAnimationFrame(G.raf);
+  fadeOutAudio();
+  const total = G.parts.length;
+  const pct = total ? Math.round(G.score / total * 100) : 0;
+  const rank = pct >= 95 ? "S" : pct >= 85 ? "A" : pct >= 70 ? "B" : pct >= 50 ? "C" : "D";
+  if ((bests[G.song.id] || 0) < G.score) bests[G.song.id] = G.score;
+
+  $("answer-dock").style.display = "none";
+  $("r-rank").textContent = rank;
+  $("r-score").textContent = `${G.score} / ${total} 파트 정답 (${pct}%)`;
+  $("r-sub").textContent = `최대 콤보 ${G.maxCombo} · ${G.song.title} 최고 기록 ${bests[G.song.id] || 0}`;
+  $("result-sheet").hidden = false;
+  buildStart(); // 최고 기록 갱신 반영
+}
+function fadeOutAudio() {
+  try {
+    const iv = setInterval(() => {
+      gPlayer.volume = Math.max(0, gPlayer.volume - 0.15);
+      if (gPlayer.volume <= 0.01) { clearInterval(iv); gPlayer.pause(); gPlayer.volume = 1; }
+    }, 120);
+  } catch (err) { gPlayer.pause(); }
+}
+
+function quitToStart(msg) {
+  if (G) { G.finished = true; cancelAnimationFrame(G.raf); }
+  gPlayer.pause();
+  $("pause-overlay").hidden = true;
+  show("screen-start");
+  $("start-msg").textContent = msg || "";
+}
+
+$("btn-quit").addEventListener("click", () => quitToStart());
+$("btn-quit2").addEventListener("click", () => quitToStart());
+$("btn-pause").addEventListener("click", () => {
+  if (!G || G.finished) return;
+  gPlayer.pause(); cancelAnimationFrame(G.raf);
+  $("pause-overlay").hidden = false;
+});
+$("btn-resume").addEventListener("click", () => {
+  $("pause-overlay").hidden = true;
+  if (!G || G.finished) return;
+  gPlayer.play();
+  G.raf = requestAnimationFrame(loop);
+});
+$("btn-again").addEventListener("click", () => startGame(G.song, gPlayer.src.startsWith("blob:") ? gPlayer.src : null));
+$("btn-home").addEventListener("click", () => quitToStart());
+$("btn-share").addEventListener("click", async () => {
+  const total = G.parts.length, pct = total ? Math.round(G.score / total * 100) : 0;
+  const text = `🎧 리센느 파트 맞추기 · ${G.song.title} — ${G.score}/${total} 파트 정답 (${pct}%)! ${location.href}`;
+  try {
+    if (navigator.share) { await navigator.share({ text }); return; }
+    await navigator.clipboard.writeText(text);
+    $("btn-share").textContent = "복사됨!";
+    setTimeout(() => ($("btn-share").textContent = "공유"), 1500);
+  } catch (err) { /* 취소 */ }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   ⑤ 파트 에디터
+   ═══════════════════════════════════════════════════════════ */
+const edPlayer = new Audio();
+edPlayer.preload = "auto";
+let ED = { lines: [], srcOverride: null, testStopAt: null };
+
+function openEditor() {
+  show("screen-editor");
+  $("ed-song-sel").innerHTML = SONGS.map((s, i) => `<option value="${i}">${s.title} (${s.audio})</option>`).join("");
+  $("ed-song-sel").value = String(selectedSong);
+  loadEditorAudio();
+}
+function loadEditorAudio() {
+  const s = SONGS[+$("ed-song-sel").value];
+  edPlayer.src = ED.srcOverride || s.audio;
+  $("ed-audio-msg").textContent = ED.srcOverride ? "✅ 선택한 파일을 사용 중입니다." : "파일이 로드되지 않으면 [파일 선택]으로 mp3를 직접 불러오세요.";
+}
+$("ed-song-sel").addEventListener("change", () => { ED.srcOverride = null; loadEditorAudio(); });
+$("ed-file").addEventListener("change", (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  ED.srcOverride = URL.createObjectURL(f);
+  loadEditorAudio();
+});
+edPlayer.addEventListener("error", () => { $("ed-audio-msg").textContent = "⚠️ 음원을 불러올 수 없어요. [파일 선택]으로 mp3를 직접 불러오면 됩니다."; });
+
+$("ed-play").addEventListener("click", () => {
+  if (edPlayer.paused) { edPlayer.play(); } else { edPlayer.pause(); }
+});
+edPlayer.addEventListener("play", () => $("ed-play").textContent = "⏸ 일시정지");
+edPlayer.addEventListener("pause", () => $("ed-play").textContent = "▶ 재생");
+$("ed-back5").addEventListener("click", () => { edPlayer.currentTime = Math.max(0, edPlayer.currentTime - 5); });
+$("ed-rate").addEventListener("click", () => {
+  edPlayer.playbackRate = edPlayer.playbackRate === 1 ? 0.75 : 1;
+  $("ed-rate").textContent = edPlayer.playbackRate.toFixed(2).replace(/0+$/, "").replace(/\.$/, ".0") + "×";
+});
+edPlayer.addEventListener("timeupdate", () => {
+  $("ed-time").textContent = fmt(edPlayer.currentTime) + " / " + (isFinite(edPlayer.duration) ? fmt(edPlayer.duration) : "0:00");
+  if (isFinite(edPlayer.duration)) {
+    $("ed-seek").max = edPlayer.duration;
+    if (!ED.seeking) $("ed-seek").value = edPlayer.currentTime;
+  }
+  if (ED.testStopAt != null && edPlayer.currentTime >= ED.testStopAt) { edPlayer.pause(); ED.testStopAt = null; }
+});
+$("ed-seek").addEventListener("input", () => { ED.seeking = true; edPlayer.currentTime = +$("ed-seek").value; });
+$("ed-seek").addEventListener("change", () => { ED.seeking = false; });
+
+$("ed-build").addEventListener("click", () => {
+  const lines = $("ed-lyrics").value.split("\n").map((s) => s.trim()).filter(Boolean);
+  if (!lines.length) { alert("가사를 한 줄 이상 입력해주세요!"); return; }
+  const memberKeys = Object.keys(MEMBERS);
+  ED.lines = lines.map((text, i) => ({ text, start: null, end: null, answer: memberKeys[i % memberKeys.length] }));
+  $("ed-step3").hidden = false;
+  $("ed-step4").hidden = false;
+  renderEdTable();
+});
+
+function renderEdTable() {
+  const memberOpts = (sel) =>
+    Object.entries(MEMBERS).map(([k, m]) => `<option value="${k}" ${sel === k ? "selected" : ""}>${m.name}</option>`).join("") +
+    `<option value="${ALL_KEY}" ${sel === ALL_KEY ? "selected" : ""}>떼창</option>`;
+  const armed = ED.lines.findIndex((l) => l.start == null);
+  $("ed-table").querySelector("tbody").innerHTML = ED.lines.map((l, i) => `
+    <tr class="${i === armed ? "armed" : ""}">
+      <td>${i + 1}</td>
+      <td><button class="row-play" data-i="${i}" title="구간 듣기">▶</button></td>
+      <td><input type="text" data-i="${i}" data-f="text" value="${escapeHtml(l.text)}" /></td>
+      <td><input type="number" step="0.1" min="0" data-i="${i}" data-f="start" value="${l.start == null ? "" : l.start}" /></td>
+      <td><input type="number" step="0.1" min="0" data-i="${i}" data-f="end" value="${l.end == null ? "" : l.end}" /></td>
+      <td><select data-i="${i}" data-f="answer">${memberOpts(l.answer)}</select></td>
+    </tr>`).join("");
+
+  $("ed-table").querySelectorAll("input, select").forEach((el) => {
+    el.addEventListener("change", () => {
+      const i = +el.dataset.i, f = el.dataset.f;
+      ED.lines[i][f] = f === "text" || f === "answer" ? el.value : (el.value === "" ? null : +el.value);
+    });
+  });
+  $("ed-table").querySelectorAll(".row-play").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const l = ED.lines[+btn.dataset.i];
+      if (l.start == null) return;
+      edPlayer.currentTime = l.start;
+      ED.testStopAt = l.end != null ? l.end : l.start + 5;
+      edPlayer.play();
+    });
+  });
+}
+
+function stampStart() {
+  const t = +edPlayer.currentTime.toFixed(2);
+  const i = ED.lines.findIndex((l) => l.start == null);
+  if (i < 0) return;
+  if (i > 0 && ED.lines[i - 1].end == null) ED.lines[i - 1].end = t;
+  ED.lines[i].start = t;
+  renderEdTable();
+}
+function stampEnd() {
+  const t = +edPlayer.currentTime.toFixed(2);
+  for (let i = ED.lines.length - 1; i >= 0; i--) {
+    if (ED.lines[i].start != null && ED.lines[i].end == null) { ED.lines[i].end = t; break; }
+  }
+  renderEdTable();
+}
+$("ed-stamp").addEventListener("click", stampStart);
+$("ed-end-stamp").addEventListener("click", stampEnd);
+document.addEventListener("keydown", (e) => {
+  if (!$("screen-editor").classList.contains("active")) return;
+  if (e.target.matches("input, textarea, select")) return;
+  if (e.code === "Space") { e.preventDefault(); stampStart(); }
+});
+$("ed-reset-time").addEventListener("click", () => {
+  ED.lines.forEach((l) => { l.start = null; l.end = null; });
+  renderEdTable();
+});
+
+function validatedParts() {
+  if (!ED.lines.length) { $("ed-msg").textContent = "먼저 가사를 입력하고 표를 만들어주세요."; return null; }
+  const bad = ED.lines.findIndex((l) => l.start == null || l.end == null || l.end <= l.start);
+  if (bad >= 0) { $("ed-msg").textContent = `${bad + 1}번 줄의 시작/끝 시간을 확인해주세요. (끝은 시작보다 커야 해요)`; return null; }
+  $("ed-msg").textContent = "";
+  return [...ED.lines].sort((a, b) => a.start - b.start)
+    .map((l) => ({ start: l.start, end: l.end, text: l.text, answer: l.answer }));
+}
+$("ed-test").addEventListener("click", () => {
+  const parts = validatedParts();
+  if (!parts) return;
+  const song = SONGS[+$("ed-song-sel").value];
+  song.parts = parts; // 새로고침 전까지 임시 적용
+  edPlayer.pause();
+  buildStart();
+  startGame(song, ED.srcOverride);
+});
+$("ed-gen").addEventListener("click", () => {
+  const parts = validatedParts();
+  if (!parts) return;
+  const song = SONGS[+$("ed-song-sel").value];
+  const body = parts.map((p) =>
+    `      { start: ${p.start}, end: ${p.end}, text: ${JSON.stringify(p.text)}, answer: ${JSON.stringify(p.answer)} },`
+  ).join("\n");
+  $("ed-out").value = `/* ${song.title} — 파트 에디터로 생성 */\nparts: [\n${body}\n],`;
+  $("ed-out").hidden = false;
+  $("ed-copy").hidden = false;
+});
+$("ed-copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("ed-out").value);
+  } catch (err) {
+    $("ed-out").select(); document.execCommand("copy");
+  }
+  $("ed-copy").textContent = "복사됨!";
+  setTimeout(() => ($("ed-copy").textContent = "복사"), 1500);
+});
+$("btn-ed-back").addEventListener("click", () => { edPlayer.pause(); show("screen-start"); });
+
+/* 초기화 */
+buildStart();
+</script>
+</body>
+</html>
