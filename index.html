@@ -69,6 +69,11 @@ h1{font-family:var(--serif);font-weight:800;font-size:clamp(32px,9vw,44px);text-
 .btn-row .btn{flex:1}
 .editor-link{display:block;text-align:center;margin-top:16px;font-size:13.5px;color:var(--ink-soft);background:none;border:none;cursor:pointer;text-decoration:underline;text-underline-offset:3px;width:100%}
 .start-msg{text-align:center;font-size:13px;color:var(--danger);margin-top:12px;min-height:1em}
+.donate{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:18px;padding-top:14px;border-top:1px solid var(--line);line-height:1.9}
+.donate b{font-weight:700;color:var(--ink)}
+.copy-acct{margin-left:6px;padding:3px 10px;font-size:11.5px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;color:var(--ink-soft)}
+.copy-acct:active{transform:scale(.96)}
+#suggest-input{width:100%;min-height:110px;padding:12px;border:1px solid var(--line);border-radius:12px;font-size:14px;line-height:1.7;font-family:var(--sans);resize:vertical}
 
 /* ═══ 게임 화면 (전체 높이 앱 레이아웃) ═══ */
 .game-shell{position:fixed;inset:0;display:none;flex-direction:column;background:transparent;z-index:5}
@@ -224,6 +229,9 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
     <button class="btn btn-ghost board-link" id="btn-board">🏆 랭킹 보드</button>
     <p class="start-msg" id="start-msg"></p>
     <button class="editor-link" id="btn-editor">🛠 파트 에디터 — 가사·타이밍 직접 만들기</button>
+    <button class="editor-link" id="btn-suggest">💬 건의사항 보내기 — 파트 오류 제보·기능 제안 환영</button>
+    <p class="donate">🌷 게임이 즐거우셨다면 · <b>후원 계좌</b> 토스뱅크 1000-2201-8989 (예금주 김태현)
+      <button class="copy-acct" id="btn-copy-acct">계좌 복사</button></p>
   </div>
 </section>
 
@@ -296,6 +304,17 @@ input[type=range]{flex:1;min-width:120px;accent-color:#8a6fd1}
     <p class="start-msg" id="nick-msg" style="margin-top:8px"></p>
     <button class="btn btn-primary" id="nick-go">경쟁전 시작</button>
     <button class="btn btn-ghost" id="nick-cancel">취소</button>
+  </div>
+</div>
+
+<!-- 건의사항 입력 -->
+<div class="overlay" id="suggest-overlay" hidden>
+  <div class="pause-card">
+    <h3>💬 건의사항</h3>
+    <textarea id="suggest-input" maxlength="500" placeholder="파트 오류 제보, 추가하고 싶은 곡, 바라는 기능 등 무엇이든 적어주세요! (최대 500자)"></textarea>
+    <p class="start-msg" id="suggest-msg" style="margin-top:8px"></p>
+    <button class="btn btn-primary" id="suggest-send">보내기</button>
+    <button class="btn btn-ghost" id="suggest-cancel">닫기</button>
   </div>
 </div>
 
@@ -539,6 +558,120 @@ const SONGS = [
       { start: 65, end: 83, text: "Girl Pretty Girl Pretty Girl 그냥 되진 않는 거죠 난 Beautiful Girl Beautiful Ye Ye Ye Ye Come on beautiful girl Ye Ye", answer: "all" }
     ],
   },
+  {
+    id: "glowup",
+    title: "Glow Up",
+    audio: "songs/glowup.mp3",
+    cover: "img/cover_glowup.jpg",
+    /* Glow Up — 1절 컷(74.4초). 파트 분배: 사용자 제공(네이버 블로그 na5456a), 타이밍: 보컬 분리 자동 정렬 초안 */
+    parts: [
+      { start: 0.5, end: 12.4, text: "I wanna glow 늘 언제든지 투명한 이 잔향같이", answer: "minami" },
+      { start: 12.4, end: 21.9, text: "아주 은은하게 스며가 조금씩 Let me show you What I like like like", answer: "minami" },
+      { start: 22.4, end: 28.2, text: "햇살같이 맑은 기분 물결처럼 비친 내 맘 들여다봐 거긴 뭐가 있을까", answer: "zena" },
+      { start: 28.2, end: 34.8, text: "맑은 향기가 살랑 불어와 길을 나선 걸음엔 설렘만이 가득해", answer: "woni" },
+      { start: 35, end: 39.6, text: "맘은 Moving fast 나를 재촉해 I've been waiting too long", answer: "liv" },
+      { start: 40.6, end: 45.4, text: "Baby, we are growing up Lately, 맘이 일렁여 멀리 발을 떼고서 날아 Keep up keep up keep up", answer: "may" },
+      { start: 45.7, end: 52.7, text: "두 눈 속에 더 담고 싶어 보여줘 I'm so curious 빛을 가득 머금어 네게 더 반짝일래", answer: "minami" },
+      { start: 52.7, end: 53.7, text: "Glow Up", answer: "woni" },
+      { start: 53.7, end: 59.1, text: "that-that-that that-that-Glow Up that-that-that that-that-Glow Up that-that-that that-that-Glow Up", answer: "liv" },
+      { start: 59.5, end: 61, text: "반짝일래 (Glow Up)", answer: "minami" },
+      { start: 61, end: 67.2, text: "that-that-that that-that-Glow Up that-that-that that-that-Glow Up that-that-that that-that-Glow Up", answer: "zena" },
+      { start: 67.6, end: 71.4, text: "(반짝일래) (Glow Up)", answer: "minami" },
+    ],
+  },
+  {
+    id: "bloom",
+    title: "Bloom",
+    audio: "songs/bloom.mp3",
+    cover: "img/cover_bloom.jpg",
+    /* Bloom — 1절 컷(74.4초). 파트 분배: okjulia1.tistory.com/2887, 타이밍: 보컬 분리 자동 정렬 초안 */
+    parts: [
+      { start: 4.5, end: 12.8, text: "완벽한 moment 나다운 arise 더 망설임 없이 더 밝게 빛나", answer: "zena" },
+      { start: 13.4, end: 22.1, text: "이 순간 진심을 담아 나를 그려갈게 난 한편의 movie를 다 채워가도록", answer: "minami" },
+      { start: 23.2, end: 24.2, text: "이젠", answer: "may" },
+      { start: 24.2, end: 27.9, text: "내가 날 비춰줄래", answer: "woni" },
+      { start: 27.9, end: 28.9, text: "내게", answer: "may" },
+      { start: 28.9, end: 35.9, text: "한발 다가갈래 따스히 hands on me now", answer: "woni" },
+      { start: 36.2, end: 45.1, text: "Got me feelin' 기다려 왔던 작은 빛이 내 안을 비추면 서서히 bloom, ah", answer: "all" },
+      { start: 45.1, end: 47.9, text: "날 깨워내", answer: "minami" },
+      { start: 47.9, end: 55.9, text: "내 안의 꿈을 깨운 듯이 새로워지는 heart 가득히 bloom, ah", answer: "all" },
+      { start: 55.9, end: 59.8, text: "더 아름답게 피어나지", answer: "may" },
+      { start: 61.5, end: 68, text: "(ah ah) Look into my eyes (ah ah) 눈이 부신 you (ah ah) 뭐든 you can do", answer: "liv" },
+      { start: 68.3, end: 71.4, text: "It's time to shine my bloom", answer: "minami" },
+    ],
+  },
+  {
+    id: "yoyo",
+    title: "YoYo",
+    audio: "songs/yoyo.mp3",
+    cover: "img/cover_yoyo.jpg",
+    /* YoYo — 1절 컷(82.5초). 파트 분배: okjulia1.tistory.com/1774, 타이밍: 보컬 분리 자동 정렬 초안 */
+    parts: [
+      { start: 9.8, end: 25.3, text: "Find 자, 어서 날 찾아내 눈 가린 다음 그 감각에 집중해 Baby, 얕은 잠에 들 때 처음 맡아 본 그 향기 나를 찾는 그런 놀이 Oh, wow", answer: "minami" },
+      { start: 25.3, end: 38.4, text: "Like a dream 꽃잎이 날리면 넌 어질어질했지 이건 One and only 우린 마치 넝쿨이 휘감고 있는 긴 그네를 나란히 타는 중 Let's play Go!", answer: "liv" },
+      { start: 38.9, end: 48.2, text: "Lead me to your dream 그리고 우린 더 높이 We're going Up down, up down, up down Swing me like swing me like", answer: "zena" },
+      { start: 49.3, end: 55.7, text: "하늘 구름 위 끝에 닿을 때까지 We're going Up down, up down, up down I like that", answer: "woni" },
+      { start: 56.5, end: 62.5, text: "더 멀리 너와 가고 싶어 갈라진 저 꿈의 틈으로", answer: "minami" },
+      { start: 63, end: 68.1, text: "Up down, up down, up down Swing me like swing me like that", answer: "may" },
+      { start: 68.1, end: 73.7, text: "널 위한 Fantasy 곧 눈을 뜨면 사라진대도", answer: "liv" },
+      { start: 73.7, end: 79.5, text: "Up down, up down Swing me like, swing me like, swing me like a yo-yo", answer: "zena" },
+    ],
+  },
+  {
+    id: "busyboy",
+    title: "Busy Boy",
+    audio: "songs/busyboy.mp3",
+    cover: "img/cover_busyboy.jpg",
+    /* Busy Boy — 1절 컷(71.7초). 파트 분배: 사용자 제공, 타이밍: 보컬 분리 자동 정렬 초안 (에디터 미세 조정 추천) */
+    parts: [
+      { start: 13.9, end: 19.7, text: "I wanna know what's on your mind 아무렇지 않게 you always make me behind", answer: "minami" },
+      { start: 19.8, end: 26.2, text: "that's just how you do 지나칠만큼 차가운 넌 또 바빠 There you go again, babe", answer: "minami" },
+      { start: 26.2, end: 30.6, text: "꽉찬 네 하루 틈새 난 마치 꼭 희미해진 dream 괜찮은 척 don't you know me?", answer: "zena" },
+      { start: 30.6, end: 38.9, text: "지웠다 썼다 보내버렸지 화가 난 emoji I don't know what i should do", answer: "zena" },
+      { start: 39.2, end: 48.1, text: "밀었다 당기긴 이제 그만해 please make sure 넌 불투명한 안개 속 같이 어느샌가 I lose my way", answer: "may" },
+      { start: 48.1, end: 59.8, text: "난 네가 싫어 Busy, busy, busy, busy Busy, busy, busy, busy Busy boy, 네가 싫어 Busy boy", answer: "woni" },
+      { start: 59.8, end: 71.4, text: "난 네가 싫어 Busy, busy, busy, busy Busy, busy, busy, busy Busy boy, 네가 싫어 Busy boy", answer: "liv" },
+    ],
+  },
+  {
+    id: "mvp",
+    title: "MVP",
+    audio: "songs/mvp.mp3",
+    cover: "img/cover_mvp.jpg",
+    /* MVP — 1절 컷(80.3초). 파트 분배: 사용자 제공, 타이밍: 보컬 분리 자동 정렬 초안 (에디터 미세 조정 추천) */
+    parts: [
+      { start: 11.0, end: 17.9, text: "어릴 적 나 두 손 모아 바라 오던 꿈이 있어", answer: "zena" },
+      { start: 17.9, end: 25.2, text: "빛나는 날이 오겠지 저 별처럼", answer: "zena" },
+      { start: 25.2, end: 29.9, text: "그런 때가 온다면 있는 힘껏 온 맘 다해", answer: "liv" },
+      { start: 30.0, end: 37.4, text: "네게 닿게 노래하겠다고 속삭이던 나의 오랜 Wishes", answer: "liv" },
+      { start: 37.5, end: 47.8, text: "네 앞에 서면 상상만 하던 그런 순간이 찾아온 것 같은 걸", answer: "woni" },
+      { start: 47.9, end: 54.4, text: "Oh 나의 하루를 가득 채운 this feeling Something 'bout you oh Something about you", answer: "minami" },
+      { start: 54.4, end: 67.9, text: "You 영원토록 함께 하고픈 dreaming 너라서 빛나 I finally see you're my MVP", answer: "liv" },
+      { start: 67.9, end: 72.9, text: "함께한 All time 더해질 내일들이", answer: "may" },
+      { start: 72.9, end: 80.2, text: "Used to be the kids that never got it right 널 볼 때면 맘은 높이 하늘로", answer: "zena" },
+    ],
+  },
+  {
+    id: "countingstar",
+    title: "Counting Star",
+    audio: "songs/countingstar.mp3",
+    cover: "img/cover_countingstar.jpg",
+    /* Counting Star — 1절 컷(80.5초). ⚠️ 파트 분배(answer)는 공식/팬 소스를 찾지 못해
+       "음성 유사도 자동 추정 초안"입니다 — 소스 확인 후 반드시 검수하세요.
+       타이밍: 보컬 분리 자동 정렬 초안 (에디터 미세 조정 추천) */
+    parts: [
+      { start: 21.4, end: 24.5, text: "저 별을 counting star", answer: "zena" },
+      { start: 26.1, end: 29.3, text: "내 마음에 담는다면", answer: "minami" },
+      { start: 30.7, end: 34.2, text: "두 눈을 꼭 감아", answer: "may" },
+      { start: 35.3, end: 38.9, text: "이 아픔이 온다면", answer: "zena" },
+      { start: 38.9, end: 42.8, text: "우린 말야", answer: "woni" },
+      { start: 43.6, end: 48.4, text: "Come take mine, we'll be shine", answer: "may" },
+      { start: 52.0, end: 59.0, text: "Hold my hand Counting stars 저 별을 따라간다면 now", answer: "minami" },
+      { start: 59.0, end: 66.1, text: "Let's go ride 이 지구밖에 없는 곳 Till I die", answer: "liv" },
+      { start: 67.1, end: 74.7, text: "We fine We high Go up Tonight", answer: "all" },
+      { start: 74.7, end: 80.4, text: "We fine We high Go up Tonight", answer: "all" },
+    ],
+  },
 ];
 
 const GRACE = 1.0; // 파트가 끝난 뒤에도 답할 수 있는 여유 시간(초)
@@ -677,6 +810,53 @@ async function fetchBoard(songId) {
     ((a.ts && a.ts.toMillis ? a.ts.toMillis() : 0) - (b.ts && b.ts.toMillis ? b.ts.toMillis() : 0)));
   return rows.slice(0, 20);
 }
+
+/* ── 건의사항 (Firestore "suggestions" 컬렉션 — 쓰기 전용, 열람은 Firebase 콘솔) ── */
+async function submitSuggestion(text) {
+  const { db, fs } = await fbInit();
+  await fs.addDoc(fs.collection(db, "suggestions"), {
+    text,
+    nick: (localStorage.getItem("rescene-nick") || "").slice(0, 12),
+    ts: fs.serverTimestamp(),
+  });
+}
+$("btn-suggest").addEventListener("click", () => {
+  $("suggest-input").value = "";
+  $("suggest-msg").textContent = "";
+  $("suggest-msg").style.color = "";
+  $("suggest-overlay").hidden = false;
+  setTimeout(() => $("suggest-input").focus(), 60);
+});
+$("suggest-cancel").addEventListener("click", () => { $("suggest-overlay").hidden = true; });
+$("suggest-send").addEventListener("click", async () => {
+  const text = $("suggest-input").value.trim();
+  const msg = $("suggest-msg");
+  msg.style.color = "";
+  if (!text) { msg.textContent = "내용을 입력해주세요!"; return; }
+  const last = +(localStorage.getItem("rescene-suggest-ts") || 0);
+  if (Date.now() - last < 30000) { msg.textContent = "조금 뒤에 다시 보내주세요 (30초 간격)"; return; }
+  msg.textContent = "보내는 중…";
+  try {
+    await submitSuggestion(text.slice(0, 500));
+    try { localStorage.setItem("rescene-suggest-ts", String(Date.now())); } catch (e) {}
+    msg.style.color = "#3ba98f";
+    msg.textContent = "💌 잘 전달됐어요 — 소중한 의견 고마워요!";
+    setTimeout(() => { $("suggest-overlay").hidden = true; }, 1400);
+  } catch (err) {
+    msg.textContent = "전송에 실패했어요 — 네트워크 또는 Firestore 규칙(README 참고)을 확인해주세요.";
+  }
+});
+$("btn-copy-acct").addEventListener("click", async () => {
+  const acct = "토스뱅크 1000-2201-8989";
+  try { await navigator.clipboard.writeText(acct); } catch (e) {
+    const t = document.createElement("textarea");
+    t.value = acct; document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); } catch (e2) {}
+    t.remove();
+  }
+  $("btn-copy-acct").textContent = "복사됨!";
+  setTimeout(() => ($("btn-copy-acct").textContent = "계좌 복사"), 1500);
+});
 
 let boardSong = null;
 function openBoard(songId) {

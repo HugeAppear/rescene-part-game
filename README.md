@@ -120,9 +120,26 @@ service cloud.firestore {
         request.resource.data.ts == request.time;
       allow update, delete: if false; // 수정·삭제는 콘솔에서만
     }
+
+    // 건의사항: 누구나 "새 건의 추가"만 가능. 읽기는 불가 (열람은 Firebase 콘솔에서만)
+    match /suggestions/{id} {
+      allow read: if false;
+      allow create: if
+        request.resource.data.keys().hasOnly(['text','nick','ts']) &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() >= 1 &&
+        request.resource.data.text.size() <= 500 &&
+        request.resource.data.nick is string &&
+        request.resource.data.nick.size() <= 12 &&
+        request.resource.data.ts == request.time;
+      allow update, delete: if false;
+    }
   }
 }
 ```
+
+> 🔁 **이미 규칙을 게시한 적이 있다면**, 위 블록(suggestions 부분이 추가된 전체)을
+> 다시 붙여넣고 **게시**를 눌러야 건의사항 전송이 작동합니다.
 
 ### 3) 웹 앱 등록 + 설정 복사
 
@@ -147,10 +164,21 @@ config가 들어가 있습니다 (`const FIREBASE_CONFIG = { ... }`).
 
 ```
 scores / {songId} / entries / 자동ID: { name, score, total, pct, combo, ts }
+suggestions / 자동ID: { text, nick, ts }
 ```
 
 보드는 곡별 상위 50개를 받아 점수 → 정답률 → 콤보 → 먼저 등록한 순으로
 정렬해 20명을 보여줍니다. 기록 정리는 Firebase 콘솔 → Firestore에서 직접.
+
+### 💬 건의사항 확인하는 법
+
+시작 화면의 **건의사항 보내기**로 접수된 글은 `suggestions` 컬렉션에 쌓입니다.
+플레이어는 읽을 수 없고(쓰기 전용), 확인은 여기서:
+
+1. https://console.firebase.google.com → `rescene-part-game` 프로젝트
+2. **빌드 → Firestore Database → 데이터** 탭 → `suggestions` 컬렉션
+3. `ts` 필드로 정렬하면 최신순으로 볼 수 있어요. 처리한 건의는 문서를
+   직접 삭제하면 됩니다. (닉네임은 경쟁전에서 쓰던 닉이 있으면 함께 저장)
 
 ## GitHub Pages 배포
 
